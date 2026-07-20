@@ -1,0 +1,12 @@
+{
+  "$doc": {
+    "construct": "component",
+    "inputs": [
+      {
+        "name": "x",
+        "api": "prop"
+      }
+    ]
+  },
+  "$why": "input api 'prop' not in enum"
+}

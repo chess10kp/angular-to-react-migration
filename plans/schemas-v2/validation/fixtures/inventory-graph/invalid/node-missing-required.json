@@ -1,0 +1,30 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "sourceFramework": {
+      "id": "angular",
+      "version": "17.3.0",
+      "role": "source"
+    },
+    "generatedAt": "2026-07-17T12:00:00Z",
+    "sourceRoots": [
+      "src/app"
+    ],
+    "nodes": [
+      {
+        "nodeId": "x",
+        "kind": "component"
+      }
+    ],
+    "edges": [
+      {
+        "from": "component:invoiceTable",
+        "to": "service:InvoiceService",
+        "kind": "depends-on",
+        "foundBy": "static-ast"
+      }
+    ],
+    "unaccounted": []
+  },
+  "$why": "node missing 'declaredIn'"
+}

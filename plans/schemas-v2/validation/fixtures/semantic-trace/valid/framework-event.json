@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "2.0.0",
+  "seq": 3,
+  "t": 41,
+  "layer": "raw",
+  "kind": "framework.event",
+  "frameworkEvent": {
+    "adapterId": "angular2plus",
+    "side": "source",
+    "type": "change-detection",
+    "detail": {
+      "componentId": "invoiceTable"
+    }
+  }
+}

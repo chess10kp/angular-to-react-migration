@@ -1,0 +1,20 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "patchId": "p-001",
+    "unitId": "invoiceTable",
+    "author": {
+      "role": "converter"
+    },
+    "intent": {
+      "kind": "initial-conversion"
+    },
+    "changes": [
+      {
+        "path": "target/InvoiceTable.tsx",
+        "changeType": "add"
+      }
+    ]
+  },
+  "$why": "unitId pattern"
+}

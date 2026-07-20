@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "2.0.0",
+  "runId": "run-001",
+  "app": {
+    "name": "invoices",
+    "sizeMetrics": {
+      "sourceFiles": 900,
+      "components": 120,
+      "services": 40,
+      "routes": 25,
+      "modules": 12,
+      "templates": 110,
+      "linesOfCode": 88000
+    },
+    "testSurface": {
+      "unitTests": "jest",
+      "e2eTests": "playwright"
+    },
+    "i18n": "ngx-translate",
+    "showstoppers": [
+      "multiple app roots"
+    ]
+  },
+  "source": {
+    "framework": {
+      "id": "angular",
+      "version": "17.3.0",
+      "role": "source"
+    },
+    "adapter": {
+      "adapterId": "angular2plus",
+      "adapterVersion": "2.0.0",
+      "data": {
+        "angularVersion": "17.3.0",
+        "bootstrapStyle": "standalone",
+        "buildSystem": "angular-cli-esbuild",
+        "stateManagement": [
+          "signals",
+          "rxjs-services"
+        ],
+        "zoneful": false,
+        "usesSignals": true,
+        "router": "angular-router",
+        "moduleFederation": true,
+        "inventorySummary": {
+          "ngModules": 12,
+          "standaloneComponents": 80,
+          "pipes": 15,
+          "injectables": 40,
+          "guards": 6
+        }
+      }
+    }
+  },
+  "target": {
+    "framework": {
+      "id": "react",
+      "version": "18.2.0",
+      "role": "target"
+    }
+  },
+  "serving": {
+    "howToServe": "ng serve --port 4200",
+    "baseUrl": "http://localhost:4200",
+    "instrumentationInjection": "playwright-route-intercept",
+    "authStrategy": "seeded-cookie",
+    "backendStrategy": "record-replay-mock"
+  },
+  "strategy": {
+    "defaultSeam": "element-bridge",
+    "shellDirection": "legacy-hosts-target",
+    "unitOrdering": "services-first",
+    "normalizationPrepass": true,
+    "soakPolicy": {
+      "lowRisk": "1d",
+      "highRisk": "7d"
+    }
+  },
+  "budgets": {
+    "contextPackTokenBudget": 60000,
+    "modelRouting": {
+      "high": {
+        "tier": "strong"
+      }
+    }
+  },
+  "oracle": {
+    "minKillRate": {
+      "high": 0.8,
+      "critical": 0.95
+    },
+    "flakeScreenRuns": 3
+  },
+  "evidence": [
+    {
+      "claim": "serves locally",
+      "probe": "curl",
+      "artifactPath": "evidence/serve.log"
+    }
+  ],
+  "approval": {
+    "approvedBy": "jac",
+    "at": "2026-07-17T12:00:00Z",
+    "notes": "ok"
+  }
+}

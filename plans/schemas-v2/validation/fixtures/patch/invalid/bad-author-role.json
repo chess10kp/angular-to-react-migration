@@ -1,0 +1,20 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "patchId": "p-001",
+    "unitId": "unit:component:invoiceTable",
+    "author": {
+      "role": "reviewer"
+    },
+    "intent": {
+      "kind": "initial-conversion"
+    },
+    "changes": [
+      {
+        "path": "target/InvoiceTable.tsx",
+        "changeType": "add"
+      }
+    ]
+  },
+  "$why": "author.role 'reviewer' not in enum"
+}

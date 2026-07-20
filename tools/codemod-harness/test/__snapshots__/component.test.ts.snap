@@ -1,0 +1,181 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`component -> tsx > filter: clean deterministic skeleton (golden) 1`] = `
+"import { Fragment } from 'react';
+import { useTranslation } from 'react-i18next';
+
+export interface FilterComponentProps {
+  filters: IFilterOptions;
+}
+
+export function FilterComponent({ filters }: FilterComponentProps) {
+  const { t } = useTranslation();
+  function clearAllFilters(): void {
+    filters.clear();
+  }
+  function clearFilter(filterName: string, value: string): void {
+    filters.removeFilter(filterName, value);
+  }
+
+  return (
+    filters.hasAnyFilterSet() && (
+      <div className="filter-display">
+        <span>{t('entity.filters.set')}</span>
+        <button
+          className="btn"
+          onClick={() => clearAllFilters()}
+          data-migration-todo="event modifier not deterministically mappable: \`(keydown.enter)\`"
+        >
+          <fa-icon icon="times" title={t('entity.filters.clearAll')} />
+        </button>
+        <ul>
+          {filters.filterOptions.map((filterOption) => (
+            <Fragment key={filterOption.name}>
+              {filterOption.values.map((value) => (
+                <li key={value}>
+                  <span>{filterOption.name}:</span> {value}{' '}
+                  <button
+                    className="btn"
+                    onClick={() => clearFilter(filterOption.name, value)}
+                    data-migration-todo="event modifier not deterministically mappable: \`(keydown.enter)\`"
+                  >
+                    <fa-icon icon="times" title={t('entity.filters.clear')} />
+                  </button>
+                </li>
+              ))}
+            </Fragment>
+          ))}
+        </ul>
+      </div>
+    )
+  );
+}
+"
+`;
+
+exports[`component -> tsx > home: DI + lifecycle become flagged React idioms (golden) 1`] = `
+"import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Link, useNavigate } from 'react-router-dom';
+import './home.component.css';
+
+export function HomeComponent() {
+  const accountService = useAccountService(); // MIGRATION_TODO(di): was inject(AccountService); create this hook (or a context provider) for the ported service.
+  const navigate = useNavigate(); // MIGRATION_TODO(di): was Router; \`this.router.navigate([...])\` -> \`navigate(...)\`
+  const { t } = useTranslation();
+  const [account, setAccount] = useState<Account | null>(null); // MIGRATION_TODO(state): verify signal semantics; \`account()\` reads -> \`account\`, \`account.set(x)\` -> \`setAccount(x)\`
+  // MIGRATION_TODO(rxjs): \`destroy$\` is an Observable — subscribe in a useEffect (unsubscribe in teardown) into useState, or a useObservable() hook.
+  // was: const destroy$ = new Subject<void>();
+  // MIGRATION_TODO(this): unresolved \`this.router\` (known-token API call or unknown member — rewire by hand)
+  function login(): void {
+    this.router.navigate(['/login']);
+  }
+  // MIGRATION_TODO(effect): ngOnInit + ngOnDestroy cleanup -> mount effect; verify deps ([])
+  // MIGRATION_TODO(rxjs): 1 .subscribe() call(s) here — keep each Subscription and call .unsubscribe() in the returned cleanup (that IS the ngOnDestroy teardown).
+  useEffect(() => {
+    accountService
+      .getAuthenticationState()
+      .pipe(takeUntil(destroy$))
+      .subscribe((account) => setAccount(account));
+    return () => {
+      destroy$.next();
+      destroy$.complete();
+    };
+  }, []);
+
+  return (
+    <div className="row">
+      <div className="col-md-3">
+        <span className="hipster img-fluid rounded" />
+      </div>
+      <div className="col-md-9">
+        <h1 className="display-4">
+          <span>{t('home.title')}</span> (Jhipster Ng 17 Fixture)
+        </h1>
+        <p className="lead">{t('home.subtitle')}</p>
+        <div>
+          {account() !== null ? (
+            <div className="alert alert-success">
+              {account() && (
+                <span id="home-logged-message">
+                  {t('home.logged.message', {
+                    username: account()!.login,
+                  })}
+                </span>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="alert alert-warning">
+                <span>{t('global.messages.info.authenticated.prefix')}</span>
+                <a className="alert-link" onClick={() => login()}>
+                  {t('global.messages.info.authenticated.link')}
+                </a>
+                <span>{t('global.messages.info.authenticated.suffix')}</span>
+              </div>
+              <div className="alert alert-warning">
+                <span>{t('global.messages.info.register.noaccount')}</span> {' '}
+                <Link to="/account/register" className="alert-link">
+                  {t('global.messages.info.register.link')}
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+        <p>{t('home.question')}</p>
+        <ul>
+          <li>
+            <a href="https://www.jhipster.tech/" target="_blank" rel="noopener noreferrer">
+              {t('home.link.homepage')}
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://stackoverflow.com/tags/jhipster/info"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('home.link.stackoverflow')}
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://github.com/jhipster/generator-jhipster/issues?state=open"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('home.link.bugtracker')}
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://gitter.im/jhipster/generator-jhipster"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('home.link.chat')}
+            </a>
+          </li>
+          <li>
+            <a href="https://twitter.com/jhipster" target="_blank" rel="noopener noreferrer">
+              {t('home.link.follow')}
+            </a>
+          </li>
+        </ul>
+        <p>
+          <span>{t('home.like')}</span>
+          <a
+            href="https://github.com/jhipster/generator-jhipster"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t('home.github')}
+          </a>
+          !{' '}
+        </p>
+      </div>
+    </div>
+  );
+}
+"
+`;

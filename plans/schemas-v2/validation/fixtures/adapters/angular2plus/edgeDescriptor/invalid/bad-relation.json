@@ -1,0 +1,6 @@
+{
+  "$doc": {
+    "relation": "imports"
+  },
+  "$why": "relation 'imports' not in enum"
+}

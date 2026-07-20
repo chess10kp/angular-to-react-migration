@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "2.0.0",
+  "packId": "pk-1",
+  "role": "converter",
+  "taskType": "convert",
+  "unitId": "unit:component:invoiceTable",
+  "items": [
+    {
+      "kind": "role-card",
+      "ref": "roles/converter.md",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "tokens": 800
+    },
+    {
+      "kind": "legacy-source",
+      "ref": "src/x.ts",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "tokens": 4000
+    },
+    {
+      "kind": "scenario",
+      "ref": "scen/inv.list.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  ],
+  "tokenEstimate": 12000,
+  "budget": 60000,
+  "runId": "run-001",
+  "sourceFramework": {
+    "id": "angular",
+    "version": "17.3.0",
+    "role": "source"
+  },
+  "targetFramework": {
+    "id": "react",
+    "version": "18.2.0",
+    "role": "target"
+  },
+  "promptTemplate": "converter.md",
+  "modelTier": "strong",
+  "overflowed": false,
+  "createdAt": "2026-07-17T12:00:00Z"
+}

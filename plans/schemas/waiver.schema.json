@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mx://schemas/waiver.schema.json",
+  "title": "Waiver",
+  "description": "A signed-off intentional divergence from legacy behavior. The trace-diff policy consults active waivers; a divergence matched by a waiver is not a counterexample.",
+  "type": "object",
+  "required": ["waiverId", "unitIds", "category", "match", "justification", "status"],
+  "properties": {
+    "waiverId": { "type": "string", "pattern": "^w-[0-9]{4}$" },
+    "unitIds": { "type": "array", "items": { "type": "string" } },
+    "scenarioIds": { "type": "array", "items": { "type": "string" }, "description": "Empty = all scenarios of the units" },
+    "category": { "enum": ["a11y-improvement", "legacy-bug-fixed", "perf-improvement", "visual-refresh-approved", "dead-feature-dropped", "timing-relaxation", "other"] },
+    "match": {
+      "type": "object",
+      "description": "Machine rule deciding which divergences this waiver absorbs.",
+      "required": ["divergenceKinds"],
+      "properties": {
+        "divergenceKinds": { "type": "array", "items": { "type": "string" } },
+        "semanticKeyPattern": { "type": "string", "description": "regex over semanticKey" },
+        "stepIndexRange": { "type": "array", "items": { "type": "integer" } }
+      }
+    },
+    "justification": { "type": "string" },
+    "expectedNewBehavior": { "type": "string" },
+    "status": { "enum": ["pending-human", "approved", "rejected", "expired"] },
+    "approvedBy": { "type": "string" },
+    "approvedAt": { "type": "string", "format": "date-time" },
+    "expiresAtPhase": { "type": "string", "description": "Waivers can be scoped, e.g. valid only until decommission" }
+  }
+}

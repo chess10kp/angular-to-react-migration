@@ -1,0 +1,16 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "bundleId": "eb-001",
+    "unitId": "unit:component:invoiceTable",
+    "gate": "G3",
+    "items": [
+      {
+        "path": "evidence/build.log",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "role": "explosion"
+      }
+    ]
+  },
+  "$why": "item.role 'explosion' not in enum"
+}

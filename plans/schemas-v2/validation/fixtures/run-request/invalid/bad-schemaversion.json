@@ -1,0 +1,27 @@
+{
+  "$doc": {
+    "schemaVersion": "1.0.0",
+    "source": {
+      "framework": {
+        "id": "angular"
+      }
+    },
+    "target": {
+      "framework": {
+        "id": "react"
+      }
+    },
+    "serving": {
+      "howToServe": "x",
+      "instrumentationInjection": "index-copy"
+    },
+    "strategy": {
+      "defaultSeam": "route-shell",
+      "unitOrdering": "x"
+    },
+    "budgets": {},
+    "oracle": {},
+    "approval": {}
+  },
+  "$why": "schemaVersion const must be '2.0.0'"
+}

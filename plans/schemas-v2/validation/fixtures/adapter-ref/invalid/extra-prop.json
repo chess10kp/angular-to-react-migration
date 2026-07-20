@@ -1,0 +1,9 @@
+{
+  "$doc": {
+    "adapterId": "x",
+    "adapterVersion": "1.0.0",
+    "data": {},
+    "foo": 1
+  },
+  "$why": "additionalProperties:false rejects 'foo'"
+}

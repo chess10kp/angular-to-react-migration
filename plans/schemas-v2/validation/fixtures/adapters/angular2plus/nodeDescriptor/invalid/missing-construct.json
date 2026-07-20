@@ -1,0 +1,6 @@
+{
+  "$doc": {
+    "selector": "app-x"
+  },
+  "$why": "missing required 'construct'"
+}

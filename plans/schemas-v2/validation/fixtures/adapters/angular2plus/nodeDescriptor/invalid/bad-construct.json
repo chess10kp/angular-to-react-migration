@@ -1,0 +1,6 @@
+{
+  "$doc": {
+    "construct": "hook"
+  },
+  "$why": "construct 'hook' not in enum"
+}

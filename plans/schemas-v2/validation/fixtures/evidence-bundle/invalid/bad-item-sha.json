@@ -1,0 +1,15 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "bundleId": "eb-001",
+    "unitId": "unit:component:invoiceTable",
+    "gate": "G3",
+    "items": [
+      {
+        "path": "x",
+        "sha256": "nope"
+      }
+    ]
+  },
+  "$why": "item sha256 pattern (via evidenceRefBase)"
+}

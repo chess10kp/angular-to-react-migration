@@ -1,0 +1,13 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "decisionId": "d-0001",
+    "type": "waiver",
+    "unitIds": [
+      "unit:component:invoiceTable"
+    ],
+    "justification": "legacy bug",
+    "status": "granted"
+  },
+  "$why": "status 'granted' not in enum"
+}

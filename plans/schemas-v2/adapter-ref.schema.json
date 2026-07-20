@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mx://schemas/v2/adapter-ref.schema.json",
+  "title": "AdapterRef",
+  "description": "Framework-neutral envelope for framework-specific data. Core schemas NEVER inline framework fields; they carry a typed AdapterRef in their sourceAdapter/targetAdapter slots. The `adapterId` selects a concrete adapter schema (e.g. adapters/angular2plus.schema.json), and `data` MUST validate against that schema's payload. This keeps the core framework-neutral while allowing arbitrarily rich framework detail to plug in.",
+  "type": "object",
+  "required": ["adapterId", "adapterVersion", "data"],
+  "properties": {
+    "adapterId": {
+      "type": "string",
+      "description": "Stable id of the adapter that owns `data`. Examples: 'angular2plus', 'react', 'vue3', 'svelte'. The harness resolves this to a concrete adapter schema.",
+      "examples": ["angular2plus", "react", "vue3", "svelte"]
+    },
+    "adapterVersion": {
+      "type": "string",
+      "description": "SemVer of the adapter schema that `data` was produced against.",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+"
+    },
+    "data": {
+      "type": "object",
+      "description": "Adapter-specific payload. Opaque to the core; validated against the adapter schema named by adapterId."
+    }
+  },
+  "additionalProperties": false
+}

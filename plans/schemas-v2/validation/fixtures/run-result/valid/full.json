@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "2.0.0",
+  "runId": "run-001",
+  "generatedAt": "2026-07-17T12:00:00Z",
+  "unitStateCounts": {
+    "DISCOVERED": 10,
+    "ACCEPTED": 3
+  },
+  "latestLedgerSeq": 420,
+  "ratchets": {
+    "legacyFileCount": 880,
+    "paritySuiteSize": 240,
+    "bridgeCount": 3,
+    "waiverCountByCategory": {
+      "legacy-bug-fixed": 2
+    },
+    "escalationRate": 0.05
+  },
+  "recentEvents": [
+    {
+      "seq": 419,
+      "ts": "2026-07-17T12:00:00Z",
+      "actor": {
+        "role": "converter",
+        "agentId": "a1"
+      },
+      "unitId": "unit:component:invoiceTable",
+      "type": "patch-submitted",
+      "payload": {
+        "patchId": "p-001"
+      }
+    },
+    {
+      "seq": 420,
+      "ts": "2026-07-17T12:00:00Z",
+      "actor": {
+        "role": "orchestrator"
+      },
+      "type": "transition",
+      "from": "CONVERTING",
+      "to": "BUILT",
+      "gate": "G3"
+    }
+  ]
+}

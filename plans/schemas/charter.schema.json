@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mx://schemas/charter.schema.json",
+  "title": "MigrationCharter",
+  "description": "Phase 0 output. Every field must cite evidence (probe outputs). Human-approved before P1.",
+  "type": "object",
+  "required": ["app", "serving", "strategy", "budgets", "oracle", "approval"],
+  "properties": {
+    "app": {
+      "type": "object",
+      "required": ["angularjsVersion", "sizeMetrics"],
+      "properties": {
+        "name": { "type": "string" },
+        "angularjsVersion": { "type": "string", "description": "e.g. 1.8.3; 'unknown' forbidden past P0" },
+        "strictDi": { "type": ["boolean", "string"] },
+        "jqueryPresent": { "type": ["boolean", "string"] },
+        "jqueryPlugins": { "type": "array", "items": { "type": "object", "properties": { "name": { "type": "string" }, "usageCount": { "type": "integer" } } } },
+        "router": { "enum": ["ngRoute", "ui-router-0.x", "ui-router-1.x", "custom", "none", "unknown"] },
+        "uiBootstrapOrMaterial": { "type": "array", "items": { "type": "string" } },
+        "buildEra": { "enum": ["script-tags", "grunt", "gulp", "bower", "browserify", "webpack", "mixed", "other"] },
+        "moduleSystem": { "enum": ["globals", "commonjs", "es-modules", "amd", "mixed"] },
+        "sizeMetrics": {
+          "type": "object",
+          "properties": {
+            "jsFiles": { "type": "integer" }, "templates": { "type": "integer" },
+            "controllers": { "type": "integer" }, "components": { "type": "integer" },
+            "directives": { "type": "integer" }, "services": { "type": "integer" },
+            "filters": { "type": "integer" }, "routes": { "type": "integer" },
+            "locAppJs": { "type": "integer" }
+          }
+        },
+        "testSurface": { "type": "object", "properties": { "unitTests": { "type": "string" }, "e2eTests": { "type": "string" } } },
+        "i18n": { "type": "string" },
+        "showstoppers": { "type": "array", "items": { "type": "string" }, "description": "e.g. server-rendered templates, multiple ng-app roots, checksummed bundles" }
+      }
+    },
+    "serving": {
+      "type": "object",
+      "required": ["howToServe", "instrumentationInjection"],
+      "properties": {
+        "howToServe": { "type": "string", "description": "Exact command(s) / proxy config to serve legacy locally" },
+        "baseUrl": { "type": "string" },
+        "instrumentationInjection": { "enum": ["proxy-html-rewrite", "playwright-route-intercept", "index-copy", "build-hook"] },
+        "authStrategy": { "type": "string" },
+        "backendStrategy": { "enum": ["record-replay-msw", "live-staging", "hybrid"] }
+      }
+    },
+    "strategy": {
+      "type": "object",
+      "required": ["defaultSeam", "unitOrdering"],
+      "properties": {
+        "defaultSeam": { "enum": ["route-shell", "element-bridge"] },
+        "shellDirection": { "enum": ["legacy-hosts-react", "react-hosts-legacy"], "description": "Which app owns the outer page during coexistence; usually legacy-hosts-react early, flipping at the route-majority point" },
+        "unitOrdering": { "type": "string", "description": "e.g. 'services-leaves-first, then shared primitives, then routes by traffic ascending risk'" },
+        "normalizationPrepass": { "type": "boolean", "description": "Whether P1.5 legacy-side canonicalization is in scope (EXTENSIONS-OOB §2)" },
+        "soakPolicy": { "type": "object", "properties": { "lowRisk": { "type": "string" }, "highRisk": { "type": "string" } } }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "properties": {
+        "attemptCapsByTier": { "type": "object" },
+        "tokenCapsByTier": { "type": "object" },
+        "contextPackTokenBudget": { "type": "integer", "default": 60000 },
+        "modelRouting": {
+          "type": "object",
+          "description": "risk tier × role → model tier",
+          "additionalProperties": { "type": "object" }
+        },
+        "wipLimits": { "type": "object" }
+      }
+    },
+    "oracle": {
+      "type": "object",
+      "properties": {
+        "minScenariosPerUnit": { "type": "object", "description": "by risk tier" },
+        "minKillRate": { "type": "object", "properties": { "high": { "type": "number" }, "critical": { "type": "number" } } },
+        "diffPolicyDefaults": { "type": "string" },
+        "flakeScreenRuns": { "type": "integer", "default": 3 }
+      }
+    },
+    "evidence": { "type": "array", "items": { "type": "object", "properties": { "claim": { "type": "string" }, "probe": { "type": "string" }, "artifactPath": { "type": "string" } } } },
+    "approval": { "type": "object", "properties": { "approvedBy": { "type": "string" }, "at": { "type": "string" }, "notes": { "type": "string" } } }
+  }
+}

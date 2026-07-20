@@ -1,0 +1,29 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "ceId": "ce-12",
+    "unitId": "unit:component:invoiceTable",
+    "scenarioId": "inv.list",
+    "status": "open",
+    "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "divergence": {
+      "kind": "order",
+      "stepIndex": 3,
+      "legacyEvidence": {
+        "tracePath": "t/legacy.ndjson",
+        "seqRange": [
+          10,
+          20
+        ]
+      },
+      "targetEvidence": {
+        "tracePath": "t/target.ndjson",
+        "seqRange": [
+          10,
+          22
+        ]
+      }
+    }
+  },
+  "$why": "ceId must match ^ce-[0-9]{6}$"
+}

@@ -1,0 +1,23 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "scenarioId": "inv.list",
+    "unitIds": [
+      "unit:component:invoiceTable"
+    ],
+    "route": "/invoices",
+    "preconditions": {
+      "fixtureProfile": "invoices-default"
+    },
+    "userSteps": [
+      {
+        "action": "swipe"
+      }
+    ],
+    "expected": {},
+    "status": {
+      "greenOnLegacy": true
+    }
+  },
+  "$why": "action 'swipe' not in enum"
+}

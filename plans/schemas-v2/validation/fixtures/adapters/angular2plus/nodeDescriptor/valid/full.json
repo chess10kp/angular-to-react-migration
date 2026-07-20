@@ -1,0 +1,41 @@
+{
+  "construct": "component",
+  "className": "InvoiceTable",
+  "selector": "app-invoice-table",
+  "standalone": true,
+  "changeDetection": "OnPush",
+  "inputs": [
+    {
+      "name": "rows",
+      "api": "signal-input",
+      "required": true
+    }
+  ],
+  "outputs": [
+    {
+      "name": "select",
+      "api": "output-function"
+    }
+  ],
+  "signals": [
+    {
+      "name": "count",
+      "kind": "computed",
+      "effects": 1
+    }
+  ],
+  "injectables": [
+    {
+      "token": "InvoiceService",
+      "api": "inject-function"
+    }
+  ],
+  "template": {
+    "inline": false,
+    "templateUrl": "x.html",
+    "controlFlow": "builtin-control-flow",
+    "contentProjectionSlots": [
+      "header"
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "name": "@migration/codemod-harness",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Angular 17 -> React codemod harness. Slice 1: template control-flow (@if/@for/bindings) -> JSX.",
+  "bin": {
+    "codemod": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "cli": "tsx src/cli.ts",
+    "jac": "npm run build && jac run jac/codemod.jac --"
+  },
+  "dependencies": {
+    "@angular/compiler": "17.3.9",
+    "@babel/generator": "7.25.6",
+    "@babel/parser": "^7.25.6",
+    "@babel/types": "7.25.6",
+    "@types/babel__core": "^7.20.5",
+    "prettier": "3.3.3",
+    "ts-morph": "^23.0.0"
+  },
+  "devDependencies": {
+    "@types/babel__generator": "7.6.8",
+    "@types/node": "22.5.0",
+    "tsx": "4.19.0",
+    "typescript": "5.4.5",
+    "vitest": "2.0.5"
+  }
+}

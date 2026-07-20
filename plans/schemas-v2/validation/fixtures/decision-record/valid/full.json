@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "2.0.0",
+  "decisionId": "d-0001",
+  "type": "escalation-resolution",
+  "unitIds": [
+    "unit:component:invoiceTable"
+  ],
+  "justification": "legacy bug",
+  "status": "approved",
+  "scenarioIds": [
+    "inv.list"
+  ],
+  "category": "legacy-bug-fixed",
+  "match": {
+    "divergenceKinds": [
+      "dom-mismatch"
+    ],
+    "semanticKeyPattern": "^dom:",
+    "stepIndexRange": [
+      2,
+      5
+    ]
+  },
+  "expectedNewBehavior": "no phantom row",
+  "approvedBy": "jac",
+  "approvedAt": "2026-07-17T12:00:00Z",
+  "expiresAtPhase": "P7",
+  "resolution": {
+    "action": "reset budgets",
+    "budgetsReset": true,
+    "evidence": [
+      {
+        "path": "evidence/x.log",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "kind": "log"
+      }
+    ]
+  }
+}

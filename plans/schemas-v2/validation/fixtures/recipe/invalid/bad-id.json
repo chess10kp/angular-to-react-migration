@@ -1,0 +1,16 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "id": "recipe-4",
+    "status": "verified",
+    "version": 1,
+    "motifs": [
+      "http-cache"
+    ],
+    "appliesTo": {},
+    "exemplar": {
+      "unitId": "unit:service:InvoiceService"
+    }
+  },
+  "$why": "id must match ^r-[0-9]{3}[a-z0-9-]*$"
+}

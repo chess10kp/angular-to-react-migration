@@ -1,0 +1,22 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "scenarioId": "inv.list",
+    "unitIds": [
+      "unit:component:invoiceTable"
+    ],
+    "route": "/invoices",
+    "preconditions": {},
+    "userSteps": [
+      {
+        "action": "navigate",
+        "url": "/invoices"
+      }
+    ],
+    "expected": {},
+    "status": {
+      "greenOnLegacy": true
+    }
+  },
+  "$why": "preconditions.fixtureProfile required"
+}

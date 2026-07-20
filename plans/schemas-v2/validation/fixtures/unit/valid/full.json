@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "2.0.0",
+  "id": "unit:service:InvoiceService",
+  "kind": "service",
+  "rev": 4,
+  "state": "CONVERTING",
+  "stateSince": "2026-07-17T12:00:00Z",
+  "deps": [],
+  "risk": {
+    "score": 42,
+    "tier": "high",
+    "factors": [
+      "signal-effect-chain"
+    ]
+  },
+  "attempts": {
+    "convert": 0,
+    "repair": 0
+  },
+  "budget": {
+    "maxConvertAttempts": 3,
+    "maxRepairAttempts": 5,
+    "tokenCap": 200000,
+    "tokensSpent": 0
+  },
+  "artifacts": {
+    "legacyPaths": [
+      "src/app/invoice.service.ts"
+    ],
+    "targetPaths": [
+      "target/invoiceService.ts"
+    ],
+    "stories": [],
+    "tests": [
+      "target/invoiceService.test.ts"
+    ]
+  },
+  "dependents": [
+    "unit:component:invoiceTable"
+  ],
+  "motifs": [
+    "http-cache"
+  ],
+  "recipes": [
+    "r-004"
+  ],
+  "scenarios": [
+    "inv.list"
+  ],
+  "seam": {
+    "type": "element-bridge",
+    "flag": "ff.invoiceService"
+  },
+  "modelTier": "strong",
+  "sourceAdapter": {
+    "adapterId": "angular2plus",
+    "adapterVersion": "2.0.0",
+    "data": {
+      "construct": "injectable",
+      "className": "InvoiceService",
+      "injectables": [
+        {
+          "token": "HttpClient",
+          "api": "inject-function"
+        }
+      ]
+    }
+  },
+  "assignee": {
+    "role": "converter",
+    "agentId": "a1",
+    "leaseId": "l1",
+    "leaseExpiresAt": "2026-07-17T12:00:00Z"
+  },
+  "waivers": [],
+  "openCounterexamples": [],
+  "notes": "core service"
+}

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mx://schemas/v2/run-result.schema.json",
+  "schemaVersion": "2.0.0",
+  "title": "RunResult",
+  "description": "The outcome view of a migration run: the append-only event log entry shape (was: LedgerEvent, exposed here as $defs/ledgerEvent) plus a program-level rollup (ratchets, unit-state histogram). The ledger remains the source of truth; a RunResult document is the materialized summary at a point in time. Framework-neutral.",
+  "type": "object",
+  "required": ["schemaVersion", "runId", "generatedAt", "unitStateCounts"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "2.0.0" },
+    "runId": { "type": "string" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "latestLedgerSeq": { "type": "integer" },
+    "unitStateCounts": {
+      "type": "object",
+      "description": "Histogram of units by state (keys are the Unit.state enum values).",
+      "additionalProperties": { "type": "integer" }
+    },
+    "ratchets": {
+      "type": "object",
+      "description": "Program-level regression brakes (neutral).",
+      "properties": {
+        "legacyFileCount": { "type": "integer" },
+        "paritySuiteSize": { "type": "integer" },
+        "bridgeCount": { "type": "integer" },
+        "waiverCountByCategory": { "type": "object", "additionalProperties": { "type": "integer" } },
+        "escalationRate": { "type": "number" }
+      }
+    },
+    "recentEvents": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ledgerEvent" }
+    }
+  },
+  "$defs": {
+    "ledgerEvent": {
+      "type": "object",
+      "title": "LedgerEvent",
+      "description": "One append-only ledger line. Framework-neutral: no ng-specific event types.",
+      "required": ["seq", "ts", "actor", "type"],
+      "properties": {
+        "seq": { "type": "integer" },
+        "ts": { "type": "string", "format": "date-time" },
+        "actor": {
+          "type": "object",
+          "required": ["role"],
+          "properties": { "role": { "type": "string" }, "agentId": { "type": "string" }, "human": { "type": "string" } }
+        },
+        "unitId": { "type": "string" },
+        "type": {
+          "enum": ["transition", "claim", "release", "lease-expired", "gate-fail", "counterexample-opened",
+                   "counterexample-closed", "decision-granted", "decision-rejected", "escalation", "escalation-resolved",
+                   "drift-invalidation", "tombstone", "recipe-created", "recipe-revised", "lesson-added",
+                   "patch-submitted", "budget-updated", "pack-overflow", "flake-suspect", "ratchet-adjusted", "note"]
+        },
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "gate": { "type": "string", "pattern": "^G[0-9]+$" },
+        "evidence": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/evidenceRef" } },
+        "payload": { "type": "object" },
+        "note": { "type": "string", "maxLength": 1000 }
+      }
+    }
+  }
+}

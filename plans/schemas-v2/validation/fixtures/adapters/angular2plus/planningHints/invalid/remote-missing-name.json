@@ -1,0 +1,12 @@
+{
+  "$doc": {
+    "moduleFederation": {
+      "remotes": [
+        {
+          "exposedModule": "./X"
+        }
+      ]
+    }
+  },
+  "$why": "remote missing required 'name'"
+}

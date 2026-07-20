@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mx://schemas/inventory-graph.schema.json",
+  "title": "InventoryGraph",
+  "type": "object",
+  "required": ["generatedAt", "sourceRoots", "nodes", "edges", "unaccounted"],
+  "properties": {
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "sourceRoots": { "type": "array", "items": { "type": "string" } },
+    "scannerVersion": { "type": "string" },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["nodeId", "kind", "declaredIn"],
+        "properties": {
+          "nodeId": { "type": "string", "description": "e.g. ngmodule:app.invoices | ctrl:InvoiceListCtrl | dir:datePicker | svc:InvoiceService | flt:currencyShort | tpl:invoices/list.html | route:/invoices | plugin:jquery.floatThead | cmp:invoiceTable" },
+          "kind": { "enum": ["ngmodule", "controller", "component", "directive", "service", "factory", "provider", "constant", "value", "filter", "template", "route", "plugin", "vendored", "dead", "asset", "config-block", "run-block"] },
+          "declaredIn": { "type": "string", "description": "file path" },
+          "lines": { "type": "array", "items": { "type": "integer" } },
+          "di": {
+            "type": "object",
+            "properties": {
+              "style": { "enum": ["array-annotation", "$inject", "implicit-params", "mixed", "n/a"] },
+              "injects": { "type": "array", "items": { "type": "string" } }
+            }
+          },
+          "directiveMeta": {
+            "type": "object",
+            "properties": {
+              "restrict": { "type": "string" },
+              "scopeType": { "enum": ["false", "true", "isolate"] },
+              "bindings": { "type": "object" },
+              "hasCompile": { "type": "boolean" },
+              "hasLink": { "type": "boolean" },
+              "transclude": { "type": ["boolean", "string", "object"] },
+              "requiresController": { "type": "array", "items": { "type": "string" } },
+              "usesElementApi": { "type": "boolean", "description": "touches angular.element/jQuery inside" }
+            }
+          },
+          "templateRefs": { "type": "array", "items": { "type": "string" } },
+          "watchCount": { "type": "integer" },
+          "scopeEventNames": { "type": "array", "items": { "type": "string" } },
+          "usageCount": { "type": "object", "properties": { "static": { "type": "integer" }, "runtime": { "type": ["integer", "null"], "description": "filled by P2 traces" } } },
+          "unitId": { "type": ["string", "null"], "description": "which migration unit this node belongs to after slicing" }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["from", "to", "kind", "foundBy"],
+        "properties": {
+          "from": { "type": "string" },
+          "to": { "type": "string" },
+          "kind": { "enum": ["injects", "routes-to", "template-uses", "transcludes-into", "emits-to", "listens-to", "compiles", "requires-controller", "filter-used-in-template", "plugin-used-by", "module-depends", "dynamic-unresolved"] },
+          "foundBy": { "enum": ["static-ast", "template-ref", "string-match", "runtime-trace", "inferred"] },
+          "site": { "type": "string", "description": "file:line" }
+        }
+      }
+    },
+    "unaccounted": { "type": "array", "items": { "type": "string" }, "description": "MUST be empty before P1 exit" }
+  }
+}

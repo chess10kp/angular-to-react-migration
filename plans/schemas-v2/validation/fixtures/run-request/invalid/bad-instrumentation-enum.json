@@ -1,0 +1,27 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "source": {
+      "framework": {
+        "id": "angular"
+      }
+    },
+    "target": {
+      "framework": {
+        "id": "react"
+      }
+    },
+    "serving": {
+      "howToServe": "x",
+      "instrumentationInjection": "monkeypatch"
+    },
+    "strategy": {
+      "defaultSeam": "route-shell",
+      "unitOrdering": "x"
+    },
+    "budgets": {},
+    "oracle": {},
+    "approval": {}
+  },
+  "$why": "instrumentationInjection not in enum"
+}

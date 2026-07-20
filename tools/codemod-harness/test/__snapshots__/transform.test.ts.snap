@@ -1,0 +1,35 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`harness invariants > the real filter.component.html transforms cleanly (golden snapshot) 1`] = `
+"const __template = filters.hasAnyFilterSet() && (
+  <div className="filter-display">
+    <span>{t('entity.filters.set')}</span>
+    <button
+      className="btn"
+      onClick={() => clearAllFilters()}
+      data-migration-todo="event modifier not deterministically mappable: \`(keydown.enter)\`"
+    >
+      <fa-icon icon="times" title={t('entity.filters.clearAll')} />
+    </button>
+    <ul>
+      {filters.filterOptions.map((filterOption) => (
+        <Fragment key={filterOption.name}>
+          {filterOption.values.map((value) => (
+            <li key={value}>
+              <span>{filterOption.name}:</span> {value}{' '}
+              <button
+                className="btn"
+                onClick={() => clearFilter(filterOption.name, value)}
+                data-migration-todo="event modifier not deterministically mappable: \`(keydown.enter)\`"
+              >
+                <fa-icon icon="times" title={t('entity.filters.clear')} />
+              </button>
+            </li>
+          ))}
+        </Fragment>
+      ))}
+    </ul>
+  </div>
+);
+"
+`;

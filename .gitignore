@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+target/
+out/
+*.tsbuildinfo
+
+# Test / cache artifacts
+jest-cache/
+.cache/
+.parcel-cache/
+.nx/
+coverage/
+*.lcov
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local agent / harness state (not part of the project)
+.claude/
+.pi-subagents/
+
+# Third-party reference fixtures (too large for git; see README)
+references/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

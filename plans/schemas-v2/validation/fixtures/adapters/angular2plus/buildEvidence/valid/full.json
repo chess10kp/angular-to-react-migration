@@ -1,0 +1,8 @@
+{
+  "buildTool": "ng-build-esbuild",
+  "bundleBytes": 512000,
+  "bundleBytesDelta": -2048,
+  "aotClean": true,
+  "strictTemplatesClean": true,
+  "moduleFederationRemoteWired": true
+}

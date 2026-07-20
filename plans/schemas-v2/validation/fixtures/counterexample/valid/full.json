@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "2.0.0",
+  "ceId": "ce-000123",
+  "unitId": "unit:component:invoiceTable",
+  "scenarioId": "inv.list",
+  "status": "analyzing",
+  "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "divergence": {
+    "kind": "payload-mismatch",
+    "stepIndex": 3,
+    "firstDivergentSemanticKey": "net:GET:/api/invoices",
+    "legacyEvidence": {
+      "tracePath": "t/legacy.ndjson",
+      "seqRange": [
+        10,
+        20
+      ],
+      "excerpt": []
+    },
+    "targetEvidence": {
+      "tracePath": "t/target.ndjson",
+      "seqRange": [
+        10,
+        22
+      ],
+      "excerpt": []
+    },
+    "reproducibility": {
+      "runs": 5,
+      "reproduced": 5
+    }
+  },
+  "reopenCount": 1,
+  "analysis": {
+    "minimalRepro": [],
+    "suspectedConstruct": "derived-state-ordering",
+    "explanation": "signal glitch",
+    "sourceAdapter": {
+      "adapterId": "angular2plus",
+      "adapterVersion": "2.0.0",
+      "data": {
+        "cause": "signal-glitch-ordering",
+        "detail": "computed reads stale"
+      }
+    },
+    "repairDirective": {
+      "targetArtifact": "target/InvoiceTable.tsx",
+      "fixDirection": "memoize",
+      "expectedObservable": "stable order",
+      "relevantLessons": []
+    },
+    "waiverRecommended": false
+  },
+  "resolution": {
+    "kind": "fixed",
+    "evidence": [
+      {
+        "path": "x",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "decisionId": "d-0001",
+    "lessonId": "les-1"
+  }
+}

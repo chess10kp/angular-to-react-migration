@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "2.0.0",
+  "id": "r-004",
+  "status": "verified",
+  "version": 1,
+  "motifs": [
+    "http-cache"
+  ],
+  "appliesTo": {},
+  "exemplar": {
+    "unitId": "unit:service:InvoiceService"
+  }
+}

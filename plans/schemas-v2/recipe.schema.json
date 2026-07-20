@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mx://schemas/v2/recipe.schema.json",
+  "schemaVersion": "2.0.0",
+  "title": "RecipeFrontmatter",
+  "description": "YAML frontmatter of migration/recipes/<id>.md. The markdown body carries the procedure. v2 neutralizes `appliesTo.unitKinds` to the neutral unit-kind vocabulary and adds an explicit source→target framework applicability pair, so the same recipe library can be scoped per framework pairing. Framework-specific match signatures move into `appliesTo.sourceAdapter`.",
+  "type": "object",
+  "required": ["schemaVersion", "id", "status", "motifs", "appliesTo", "exemplar", "version"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "2.0.0" },
+    "id": { "type": "string", "pattern": "^r-[0-9]{3}[a-z0-9-]*$" },
+    "title": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "status": { "enum": ["draft", "verified", "revised", "deprecated"] },
+    "motifs": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "appliesTo": {
+      "type": "object",
+      "properties": {
+        "sourceFramework": { "$ref": "common.schema.json#/$defs/frameworkDescriptor" },
+        "targetFramework": { "$ref": "common.schema.json#/$defs/frameworkDescriptor" },
+        "unitKinds": { "type": "array", "items": { "enum": ["route", "component", "service", "presentation", "directive-like", "pipe-like", "module", "store", "primitive", "infra"] } },
+        "signature": { "type": "string", "description": "Machine-checkable neutral precondition, e.g. a grep/AST pattern the unit's source must match." },
+        "sourceAdapter": {
+          "description": "Optional framework-specific applicability signature (e.g. Angular2+ 'component with @Input + OnPush'; Angular2+ 'injectable with providedIn root').",
+          "$ref": "adapter-ref.schema.json"
+        },
+        "preconditions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "exemplar": {
+      "type": "object",
+      "required": ["unitId"],
+      "properties": {
+        "unitId": { "type": "string" },
+        "beforePaths": { "type": "array", "items": { "type": "string" } },
+        "afterPaths": { "type": "array", "items": { "type": "string" } },
+        "verifiedAtLedgerSeq": { "type": "integer" }
+      }
+    },
+    "codemod": {
+      "type": ["object", "null"],
+      "properties": { "script": { "type": "string" }, "coverage": { "enum": ["full", "partial-scaffold"] } }
+    },
+    "pitfalls": { "type": "array", "items": { "type": "string" } },
+    "verificationEmphasis": { "type": "array", "items": { "type": "string" } },
+    "stats": {
+      "type": "object",
+      "properties": {
+        "applied": { "type": "integer" },
+        "firstPassParity": { "type": "integer" },
+        "avgRepairLoops": { "type": "number" },
+        "escalations": { "type": "integer" }
+      }
+    }
+  }
+}

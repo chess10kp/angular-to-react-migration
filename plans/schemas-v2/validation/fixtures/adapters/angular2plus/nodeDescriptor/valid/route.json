@@ -1,0 +1,13 @@
+{
+  "construct": "route-config",
+  "route": {
+    "path": "invoices/:id",
+    "loadKind": "lazy-loadComponent",
+    "guards": [
+      "authGuard"
+    ],
+    "resolvers": [
+      "invoiceResolver"
+    ]
+  }
+}

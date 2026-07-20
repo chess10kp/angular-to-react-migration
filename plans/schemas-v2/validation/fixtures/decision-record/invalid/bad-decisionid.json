@@ -1,0 +1,13 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "decisionId": "d-1",
+    "type": "waiver",
+    "unitIds": [
+      "unit:component:invoiceTable"
+    ],
+    "justification": "legacy bug",
+    "status": "approved"
+  },
+  "$why": "decisionId must match ^d-[0-9]{4}$"
+}

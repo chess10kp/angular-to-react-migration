@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mx://schemas/v2/semantic-trace.schema.json",
+  "schemaVersion": "2.0.0",
+  "title": "SemanticTraceEvent",
+  "description": "One line of a semantic trace NDJSON file (was: TraceEvent). Traces have RAW and NORMALIZED layers; trace.diff consumes NORMALIZED. The CORE event `kind` vocabulary is framework-neutral (user/network/DOM/ARIA/URL/console/domain/settle/focus/perf). ALL framework-internal events — both source-framework (Angular2+) and target-framework (React) internals — collapse into the single neutral kind `framework.event`, whose framework-specific type and payload live in the `frameworkEvent` adapter slot. The diff/normalizer aligns on `semanticKey`, so framework-internal events never leak into parity comparison unless a policy opts in.",
+  "type": "object",
+  "required": ["schemaVersion", "seq", "t", "kind", "layer"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "2.0.0" },
+    "seq": { "type": "integer", "description": "Monotonic within a run." },
+    "t": { "type": "number", "description": "ms since scenario start (informational; normalized diffs ignore absolute time)." },
+    "layer": { "enum": ["raw", "normalized"] },
+    "stepIndex": { "type": "integer" },
+    "kind": {
+      "description": "Neutral event kind. Framework-internal lifecycle events use 'framework.event' and carry detail in frameworkEvent.",
+      "enum": [
+        "user.navigate", "user.click", "user.fill", "user.select", "user.press", "user.hover",
+        "net.request", "net.response",
+        "aria.milestone", "dom.mutation-burst", "url.change",
+        "console.error", "console.warn",
+        "domain.event",
+        "settle",
+        "framework.event",
+        "focus.change", "perf.mark"
+      ]
+    },
+    "payload": {
+      "type": "object",
+      "description": "Kind-specific payload for neutral kinds. Conventions: net.* {method, path, query, status, bodyHash}; domain.event {name, payload}; aria.milestone {snapshotHash, delta}; focus.change {fromRole+name, toRole+name}; settle {reason}."
+    },
+    "frameworkEvent": {
+      "type": "object",
+      "description": "Present when kind == 'framework.event'. Captures a framework-internal lifecycle signal. Replaces any hardcoded per-framework event kinds in the core; the type/detail are now adapter-defined, e.g. Angular2+ 'change-detection' / 'zone-task' / 'rxjs-emit' (source) and React 'commit' / 'error-boundary' (target).",
+      "required": ["adapterId", "side", "type"],
+      "properties": {
+        "adapterId": { "type": "string", "description": "Which adapter's vocabulary `type` belongs to, e.g. 'angular2plus', 'react', 'vue3'." },
+        "side": { "enum": ["source", "target"] },
+        "type": {
+          "type": "string",
+          "description": "Adapter-defined event type. Angular2+ examples: 'change-detection', 'zone-task', 'signal-write', 'effect-run', 'rxjs-emit', 'router-event', 'app-initializer'. React examples: 'commit', 'error-boundary'."
+        },
+        "detail": { "type": "object", "description": "Adapter-specific payload for this framework event (e.g. Angular2+ rxjs-emit {stream, valueHash}; React commit {componentId, phase})." }
+      }
+    },
+    "semanticKey": {
+      "type": "string",
+      "description": "Normalizer-assigned stable key used by trace.diff for alignment, e.g. 'net:GET:/api/invoices?status=paid' or 'domain:invoiceFilterChanged'. Framework-neutral by construction. Absent on raw layer."
+    }
+  }
+}

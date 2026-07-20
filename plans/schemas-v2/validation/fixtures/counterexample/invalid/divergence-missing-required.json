@@ -1,0 +1,15 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "ceId": "ce-000123",
+    "unitId": "unit:component:invoiceTable",
+    "scenarioId": "inv.list",
+    "status": "open",
+    "fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "divergence": {
+      "kind": "order",
+      "stepIndex": 3
+    }
+  },
+  "$why": "divergence missing legacyEvidence/targetEvidence"
+}

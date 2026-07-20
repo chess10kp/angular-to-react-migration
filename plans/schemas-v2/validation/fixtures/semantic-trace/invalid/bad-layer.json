@@ -1,0 +1,10 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "seq": 1,
+    "t": 12.5,
+    "kind": "user.click",
+    "layer": "cooked"
+  },
+  "$why": "layer 'cooked' not in enum"
+}

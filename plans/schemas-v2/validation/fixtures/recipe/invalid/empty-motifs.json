@@ -1,0 +1,14 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "id": "r-004",
+    "status": "verified",
+    "version": 1,
+    "motifs": [],
+    "appliesTo": {},
+    "exemplar": {
+      "unitId": "unit:service:InvoiceService"
+    }
+  },
+  "$why": "motifs minItems 1"
+}

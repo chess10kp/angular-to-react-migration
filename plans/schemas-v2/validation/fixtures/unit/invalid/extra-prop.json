@@ -1,0 +1,31 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "id": "unit:component:invoiceTable",
+    "kind": "component",
+    "rev": 0,
+    "state": "DISCOVERED",
+    "stateSince": "2026-07-17T12:00:00Z",
+    "deps": [],
+    "risk": {
+      "score": 42,
+      "tier": "high",
+      "factors": [
+        "signal-effect-chain"
+      ]
+    },
+    "attempts": {
+      "convert": 0,
+      "repair": 0
+    },
+    "budget": {
+      "maxConvertAttempts": 3,
+      "maxRepairAttempts": 5,
+      "tokenCap": 200000,
+      "tokensSpent": 0
+    },
+    "artifacts": {},
+    "owner": "jac"
+  },
+  "$why": "additionalProperties:false rejects 'owner'"
+}

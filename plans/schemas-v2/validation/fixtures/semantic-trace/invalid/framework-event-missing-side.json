@@ -1,0 +1,14 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "seq": 4,
+    "t": 1,
+    "layer": "raw",
+    "kind": "framework.event",
+    "frameworkEvent": {
+      "adapterId": "angular2plus",
+      "type": "commit"
+    }
+  },
+  "$why": "frameworkEvent missing required 'side'"
+}

@@ -1,0 +1,19 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "runId": "run-001",
+    "generatedAt": "2026-07-17T12:00:00Z",
+    "unitStateCounts": {
+      "DISCOVERED": 10,
+      "ACCEPTED": 3
+    },
+    "recentEvents": [
+      {
+        "seq": 1,
+        "ts": "2026-07-17T12:00:00Z",
+        "type": "note"
+      }
+    ]
+  },
+  "$why": "ledgerEvent missing required 'actor'"
+}

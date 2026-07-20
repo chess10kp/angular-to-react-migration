@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mx://schemas/v2/run-request.schema.json",
+  "schemaVersion": "2.0.0",
+  "title": "RunRequest",
+  "description": "The framework-neutral input that configures one migration run (was: MigrationCharter). Declares the source and target frameworks as PARAMETERS, serving/instrumentation strategy, budgets, and oracle policy. All framework-specific application facts live in `source.adapter` / `target.adapter`, never inline. Human-approved before planning.",
+  "type": "object",
+  "required": ["schemaVersion", "source", "target", "serving", "strategy", "budgets", "oracle", "approval"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "2.0.0" },
+    "runId": { "type": "string" },
+    "app": {
+      "type": "object",
+      "description": "Framework-neutral application facts. Size metrics are generic counts; framework-specific breakdowns move into source.adapter.",
+      "properties": {
+        "name": { "type": "string" },
+        "sizeMetrics": {
+          "type": "object",
+          "description": "Neutral size signals. Any framework-specific unit-kind counts belong in source.adapter.data.inventorySummary.",
+          "properties": {
+            "sourceFiles": { "type": "integer" },
+            "templates": { "type": "integer" },
+            "routes": { "type": "integer" },
+            "modules": { "type": "integer" },
+            "components": { "type": "integer" },
+            "services": { "type": "integer" },
+            "linesOfCode": { "type": "integer" }
+          }
+        },
+        "testSurface": { "type": "object", "properties": { "unitTests": { "type": "string" }, "e2eTests": { "type": "string" } } },
+        "i18n": { "type": "string" },
+        "showstoppers": { "type": "array", "items": { "type": "string" }, "description": "Framework-neutral blockers, e.g. server-rendered templates, multiple app roots, checksummed bundles." }
+      }
+    },
+    "source": {
+      "type": "object",
+      "description": "The legacy framework being migrated FROM, as a parameter.",
+      "required": ["framework"],
+      "properties": {
+        "framework": { "$ref": "common.schema.json#/$defs/frameworkDescriptor" },
+        "adapter": {
+          "description": "Typed, framework-specific source facts. For Angular 2+ this validates against adapters/angular2plus.schema.json (see appProfile).",
+          "$ref": "adapter-ref.schema.json"
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "description": "The framework being migrated TO, as a parameter (was hardcoded 'React').",
+      "required": ["framework"],
+      "properties": {
+        "framework": { "$ref": "common.schema.json#/$defs/frameworkDescriptor" },
+        "adapter": {
+          "description": "Typed, framework-specific target conventions/constraints.",
+          "$ref": "adapter-ref.schema.json"
+        }
+      }
+    },
+    "serving": {
+      "type": "object",
+      "required": ["howToServe", "instrumentationInjection"],
+      "properties": {
+        "howToServe": { "type": "string", "description": "Exact command(s)/proxy config to serve the legacy app locally." },
+        "baseUrl": { "type": "string" },
+        "instrumentationInjection": { "enum": ["proxy-html-rewrite", "playwright-route-intercept", "index-copy", "build-hook"] },
+        "authStrategy": { "type": "string" },
+        "backendStrategy": { "enum": ["record-replay-mock", "live-staging", "hybrid"] }
+      }
+    },
+    "strategy": {
+      "type": "object",
+      "required": ["defaultSeam", "unitOrdering"],
+      "properties": {
+        "defaultSeam": { "enum": ["route-shell", "element-bridge"] },
+        "shellDirection": { "enum": ["legacy-hosts-target", "target-hosts-legacy"], "description": "Which app owns the outer page during coexistence." },
+        "unitOrdering": { "type": "string" },
+        "normalizationPrepass": { "type": "boolean" },
+        "soakPolicy": { "type": "object", "properties": { "lowRisk": { "type": "string" }, "highRisk": { "type": "string" } } }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "properties": {
+        "attemptCapsByTier": { "type": "object" },
+        "tokenCapsByTier": { "type": "object" },
+        "contextPackTokenBudget": { "type": "integer", "default": 60000 },
+        "modelRouting": { "type": "object", "additionalProperties": { "type": "object" } },
+        "wipLimits": { "type": "object" }
+      }
+    },
+    "oracle": {
+      "type": "object",
+      "properties": {
+        "minScenariosPerUnit": { "type": "object" },
+        "minKillRate": { "type": "object", "properties": { "high": { "type": "number" }, "critical": { "type": "number" } } },
+        "diffPolicyDefaults": { "type": "string" },
+        "flakeScreenRuns": { "type": "integer", "default": 3 }
+      }
+    },
+    "evidence": { "type": "array", "items": { "type": "object", "properties": { "claim": { "type": "string" }, "probe": { "type": "string" }, "artifactPath": { "type": "string" } } } },
+    "approval": { "type": "object", "properties": { "approvedBy": { "type": "string" }, "at": { "type": "string" }, "notes": { "type": "string" } } }
+  }
+}

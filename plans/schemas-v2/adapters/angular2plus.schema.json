@@ -1,0 +1,258 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mx://schemas/v2/adapters/angular2plus.schema.json",
+  "schemaVersion": "2.0.0",
+  "title": "Angular2PlusAdapter",
+  "description": "Concrete adapter payloads for Angular 2+ (Angular 2 through current). These are the shapes that go in the `data` field of an AdapterRef (adapter-ref.schema.json) whose adapterId == 'angular2plus'. Each $def plugs into a specific neutral slot in the core schemas — see `x-slot` on each. Nothing here is imported by the core; the core only ever sees a generic AdapterRef.",
+  "type": "object",
+  "description-usage": "This file is a CONTAINER of $defs, not a self-discriminating union. An AdapterRef whose adapterId=='angular2plus' carries `data` that validates against EXACTLY ONE $def below, selected by the neutral slot it fills (see each $def's `x-slot`) — NOT by structural discrimination. The harness resolves `#/$defs/<def>` for the slot and validates `data` against that pointer directly. Do NOT validate `data` against this whole file: the $defs overlap structurally (most have no required fields and share properties like `construct`/`standalone`), so no top-level `oneOf`/`anyOf` could discriminate them. The top level therefore imposes only `type: object`.",
+  "$comment": "A prior version had a top-level `oneOf` over all $defs. It was removed: empty and overlapping payloads matched multiple branches, so `oneOf` (exactly-one) rejected correct slot data in both directions. Slot-based resolution replaces it.",
+  "$defs": {
+    "appProfile": {
+      "type": "object",
+      "x-slot": "RunRequest.source.adapter.data",
+      "description": "Application-level Angular2+ facts detected at intake.",
+      "properties": {
+        "angularVersion": { "type": "string", "description": "e.g. '8.2.14', '17.3.0'." },
+        "bootstrapStyle": { "enum": ["ngModule", "standalone", "mixed"], "description": "bootstrapModule(AppModule) vs bootstrapApplication(AppComponent)." },
+        "buildSystem": { "enum": ["angular-cli-webpack", "angular-cli-esbuild", "nx", "bazel", "custom-webpack", "other"] },
+        "stateManagement": { "type": "array", "items": { "enum": ["ngrx-store", "ngrx-signals", "ngxs", "akita", "rxjs-services", "signals", "none"] } },
+        "rxjsVersion": { "type": "string" },
+        "zoneful": { "type": "boolean", "description": "false = zoneless / provideExperimentalZonelessChangeDetection." },
+        "usesSignals": { "type": "boolean" },
+        "router": { "enum": ["angular-router", "custom", "none"] },
+        "moduleFederation": { "type": "boolean" },
+        "inventorySummary": {
+          "type": "object",
+          "description": "Framework-specific counts that were removed from the neutral RunRequest.app.sizeMetrics.",
+          "properties": {
+            "ngModules": { "type": "integer" },
+            "standaloneComponents": { "type": "integer" },
+            "components": { "type": "integer" },
+            "directives": { "type": "integer" },
+            "pipes": { "type": "integer" },
+            "injectables": { "type": "integer" },
+            "guards": { "type": "integer" },
+            "resolvers": { "type": "integer" },
+            "interceptors": { "type": "integer" }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "nodeDescriptor": {
+      "type": "object",
+      "x-slot": "InventoryGraph.nodes[].sourceAdapter.data | Unit.sourceAdapter.data",
+      "description": "Angular2+ classification and metadata for one inventory node / unit.",
+      "required": ["construct"],
+      "properties": {
+        "construct": { "enum": ["component", "directive", "pipe", "injectable", "ng-module", "guard", "resolver", "interceptor", "app-initializer", "route-config", "token"] },
+        "className": { "type": "string" },
+        "selector": { "type": "string", "description": "Component/directive selector." },
+        "standalone": { "type": "boolean" },
+        "changeDetection": { "enum": ["Default", "OnPush"] },
+        "declaredInModule": { "type": "string", "description": "NgModule that declares this, if non-standalone." },
+        "moduleImports": { "type": "array", "items": { "type": "string" }, "description": "For ng-module nodes: imported modules." },
+        "moduleExports": { "type": "array", "items": { "type": "string" } },
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "alias": { "type": "string" },
+              "required": { "type": "boolean" },
+              "api": { "enum": ["decorator", "signal-input", "model"], "description": "@Input() vs input()/input.required() vs model()." },
+              "twoWay": { "type": "boolean", "description": "true when a matching Output name+'Change' exists (banana-in-a-box)." }
+            }
+          }
+        },
+        "outputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "alias": { "type": "string" },
+              "api": { "enum": ["decorator-eventemitter", "output-function", "output-from-observable"] }
+            }
+          }
+        },
+        "signals": {
+          "type": "array",
+          "description": "Reactive signal members.",
+          "items": {
+            "type": "object",
+            "required": ["name", "kind"],
+            "properties": {
+              "name": { "type": "string" },
+              "kind": { "enum": ["signal", "computed", "linkedSignal", "input", "model", "viewChild", "contentChild", "toSignal"] },
+              "effects": { "type": "integer", "description": "Count of effect() blocks reading this signal." }
+            }
+          }
+        },
+        "injectables": {
+          "type": "array",
+          "description": "DI dependencies (replaces neutral dependencyInjection detail).",
+          "items": {
+            "type": "object",
+            "required": ["token"],
+            "properties": {
+              "token": { "type": "string" },
+              "api": { "enum": ["constructor-param", "inject-function"], "description": "constructor(private x: T) vs inject(T)." },
+              "optional": { "type": "boolean" },
+              "self": { "type": "boolean" },
+              "skipSelf": { "type": "boolean" },
+              "host": { "type": "boolean" }
+            }
+          }
+        },
+        "providers": {
+          "type": "array",
+          "description": "Providers this construct declares (component/module/root scope).",
+          "items": {
+            "type": "object",
+            "properties": {
+              "token": { "type": "string" },
+              "providedIn": { "enum": ["root", "platform", "any", "module", "component", "route"] },
+              "strategy": { "enum": ["useClass", "useValue", "useFactory", "useExisting", "class-shorthand"] },
+              "multi": { "type": "boolean" }
+            }
+          }
+        },
+        "appInitializer": {
+          "type": "object",
+          "description": "Present for APP_INITIALIZER / provideAppInitializer contributions.",
+          "properties": {
+            "token": { "enum": ["APP_INITIALIZER", "ENVIRONMENT_INITIALIZER", "provideAppInitializer"] },
+            "returnsPromise": { "type": "boolean" },
+            "multi": { "type": "boolean" }
+          }
+        },
+        "rxjsStreams": {
+          "type": "array",
+          "description": "Long-lived RxJS streams the construct owns — key parity/leak risk.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "sourceKind": { "enum": ["subject", "behavior-subject", "replay-subject", "http", "form-valueChanges", "router-events", "interval-timer", "fromEvent", "store-select", "other"] },
+              "operators": { "type": "array", "items": { "type": "string" }, "description": "e.g. debounceTime, switchMap, combineLatest — timing-sensitive operators matter for trace parity." },
+              "subscriptionTeardown": { "enum": ["takeUntilDestroyed", "async-pipe", "manual-unsubscribe", "takeUntil-subject", "none-detected"] }
+            }
+          }
+        },
+        "template": {
+          "type": "object",
+          "description": "Template facts for a component.",
+          "properties": {
+            "inline": { "type": "boolean" },
+            "templateUrl": { "type": "string" },
+            "controlFlow": { "enum": ["structural-directives", "builtin-control-flow", "mixed"], "description": "*ngIf/*ngFor vs @if/@for/@switch." },
+            "contentProjectionSlots": { "type": "array", "items": { "type": "string" }, "description": "ng-content select= values." },
+            "usesNgTemplateOutlet": { "type": "boolean" },
+            "bindingsSummary": { "type": "object", "properties": { "propertyBindings": { "type": "integer" }, "eventBindings": { "type": "integer" }, "twoWayBindings": { "type": "integer" } } }
+          }
+        },
+        "route": {
+          "type": "object",
+          "description": "Present for route-config nodes.",
+          "properties": {
+            "path": { "type": "string" },
+            "loadKind": { "enum": ["eager-component", "eager-module", "lazy-loadComponent", "lazy-loadChildren"] },
+            "guards": { "type": "array", "items": { "type": "string" } },
+            "resolvers": { "type": "array", "items": { "type": "string" } },
+            "outlet": { "type": "string" },
+            "data": { "type": "object" }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "edgeDescriptor": {
+      "type": "object",
+      "x-slot": "InventoryGraph.edges[].sourceAdapter.data",
+      "description": "Angular2+ specifics for a dependency edge.",
+      "properties": {
+        "relation": { "enum": ["di-inject", "template-uses-component", "content-projection", "output-binding", "route-loads", "module-imports", "provider-token", "pipe-in-template"] },
+        "contentProjectionSelector": { "type": "string" },
+        "tokenName": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "producedCode": {
+      "type": "object",
+      "x-slot": "Patch.targetAdapter.data | MigrationPlan target scaffolding (when Angular2+ is the TARGET)",
+      "description": "Angular2+ facts about code a converter produced (used when the migration TARGET is Angular2+).",
+      "properties": {
+        "construct": { "enum": ["component", "directive", "pipe", "injectable", "ng-module", "route-config"] },
+        "standalone": { "type": "boolean" },
+        "changeDetection": { "enum": ["Default", "OnPush"] },
+        "usesSignals": { "type": "boolean" },
+        "declaredInModule": { "type": "string" },
+        "moduleFederationExposedAs": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "rootCauseClass": {
+      "type": "object",
+      "x-slot": "Counterexample.analysis.sourceAdapter.data",
+      "description": "Angular2+ root-cause classification for a divergence.",
+      "properties": {
+        "cause": { "enum": ["onpush-change-detection-miss", "zone-vs-microtask-timing", "signal-glitch-ordering", "rxjs-subscription-leak", "rxjs-operator-timing", "async-pipe-vs-manual", "content-projection-mismatch", "lifecycle-hook-order", "di-scope-mismatch", "router-guard-timing", "app-initializer-ordering", "other"] },
+        "detail": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+
+    "buildEvidence": {
+      "type": "object",
+      "x-slot": "EvidenceBundle.targetAdapter.data",
+      "description": "Angular2+ build/verification evidence.",
+      "properties": {
+        "buildTool": { "enum": ["ng-build-esbuild", "ng-build-webpack", "nx", "other"] },
+        "bundleBytes": { "type": "integer" },
+        "bundleBytesDelta": { "type": "integer" },
+        "aotClean": { "type": "boolean" },
+        "strictTemplatesClean": { "type": "boolean" },
+        "moduleFederationRemoteWired": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+
+    "planningHints": {
+      "type": "object",
+      "x-slot": "MigrationPlan.targetAdapter.data",
+      "description": "Angular2+ target planning hints.",
+      "properties": {
+        "moduleFederation": {
+          "type": "object",
+          "properties": {
+            "remotes": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "exposedModule": { "type": "string" },
+                  "remoteEntry": { "type": "string" },
+                  "loadedBy": { "enum": ["route", "shell-component", "manual"] }
+                }
+              }
+            },
+            "shellName": { "type": "string" }
+          }
+        },
+        "scaffolding": { "enum": ["prefer-standalone", "prefer-ngmodule", "match-source"] }
+      },
+      "additionalProperties": false
+    }
+  }
+}

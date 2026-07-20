@@ -1,0 +1,16 @@
+{
+  "$doc": {
+    "schemaVersion": "2.0.0",
+    "id": "r-004",
+    "status": "final",
+    "version": 1,
+    "motifs": [
+      "http-cache"
+    ],
+    "appliesTo": {},
+    "exemplar": {
+      "unitId": "unit:service:InvoiceService"
+    }
+  },
+  "$why": "status 'final' not in enum"
+}

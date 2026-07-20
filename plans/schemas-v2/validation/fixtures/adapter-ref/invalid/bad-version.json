@@ -1,0 +1,8 @@
+{
+  "$doc": {
+    "adapterId": "angular2plus",
+    "adapterVersion": "v2",
+    "data": {}
+  },
+  "$why": "adapterVersion semver pattern"
+}

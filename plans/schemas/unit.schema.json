@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mx://schemas/unit.schema.json",
+  "title": "MigrationUnit",
+  "type": "object",
+  "required": ["id", "kind", "rev", "state", "stateSince", "deps", "risk", "attempts", "budget", "artifacts"],
+  "additionalProperties": false,
+  "properties": {
+    "id": { "type": "string", "pattern": "^unit:(route|cmp|dir|svc|flt|primitive|infra):[A-Za-z0-9/_.:-]+$" },
+    "kind": { "enum": ["route", "component", "directive", "service", "filter", "primitive", "infra"] },
+    "rev": { "type": "integer", "minimum": 0 },
+    "state": { "enum": ["DISCOVERED", "SPECIFIED", "READY", "CONVERTING", "BUILT", "WIRED", "VERIFYING", "DIVERGENT", "REPAIRING", "PASSING", "AUDITED", "INTEGRATED", "SOAKING", "ACCEPTED", "TOMBSTONED", "ESCALATED", "DEFERRED", "QUARANTINED"] },
+    "stateSince": { "type": "string", "format": "date-time" },
+    "deps": { "type": "array", "items": { "type": "string" } },
+    "dependents": { "type": "array", "items": { "type": "string" } },
+    "risk": {
+      "type": "object",
+      "required": ["score", "tier", "factors"],
+      "properties": {
+        "score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "tier": { "enum": ["low", "medium", "high", "critical"] },
+        "factors": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "motifs": { "type": "array", "items": { "type": "string" } },
+    "recipes": { "type": "array", "items": { "type": "string" } },
+    "scenarios": { "type": "array", "items": { "type": "string" } },
+    "seam": {
+      "type": "object",
+      "properties": {
+        "type": { "enum": ["route-shell", "element-bridge", "none-internal"] },
+        "flag": { "type": "string" }
+      }
+    },
+    "attempts": {
+      "type": "object",
+      "required": ["convert", "repair"],
+      "properties": {
+        "convert": { "type": "integer", "minimum": 0 },
+        "repair": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "required": ["maxConvertAttempts", "maxRepairAttempts", "tokenCap", "tokensSpent"],
+      "properties": {
+        "maxConvertAttempts": { "type": "integer" },
+        "maxRepairAttempts": { "type": "integer" },
+        "tokenCap": { "type": "integer" },
+        "tokensSpent": { "type": "integer" },
+        "wallClockCapMinutes": { "type": "integer" }
+      }
+    },
+    "modelTier": { "enum": ["cheap", "standard", "strong", "human"] },
+    "artifacts": {
+      "type": "object",
+      "properties": {
+        "legacyPaths": { "type": "array", "items": { "type": "string" } },
+        "targetPaths": { "type": "array", "items": { "type": "string" } },
+        "stories": { "type": "array", "items": { "type": "string" } },
+        "tests": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "assignee": {
+      "type": ["object", "null"],
+      "properties": {
+        "role": { "type": "string" },
+        "agentId": { "type": "string" },
+        "leaseId": { "type": "string" },
+        "leaseExpiresAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "waivers": { "type": "array", "items": { "type": "string" } },
+    "openCounterexamples": { "type": "array", "items": { "type": "string" } },
+    "notes": { "type": "string" }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "moduleFederation": {
+    "remotes": [
+      {
+        "name": "invoices",
+        "exposedModule": "./InvoiceTable",
+        "remoteEntry": "http://x/remoteEntry.js",
+        "loadedBy": "route"
+      }
+    ],
+    "shellName": "shell"
+  },
+  "scaffolding": "prefer-standalone"
+}

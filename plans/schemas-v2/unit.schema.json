@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mx://schemas/v2/unit.schema.json",
+  "schemaVersion": "2.0.0",
+  "title": "Unit",
+  "description": "The atomic tracked migration item. Kinds are drawn from a NEUTRAL vocabulary that maps onto any component framework; framework-specific classification (e.g. Angular2+ directive vs pipe vs injectable, or React component vs hook) is carried in `sourceAdapter`.",
+  "type": "object",
+  "required": ["schemaVersion", "id", "kind", "rev", "state", "stateSince", "deps", "risk", "attempts", "budget", "artifacts"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "2.0.0" },
+    "id": { "$ref": "common.schema.json#/$defs/unitId" },
+    "kind": {
+      "description": "Neutral unit kind. Mapping: Angular2+ component→'component', directive→'directive-like', pipe→'pipe-like', injectable/service→'service', NgModule→'module'; React component→'component', hook→'directive-like', context→'store'.",
+      "enum": ["route", "component", "service", "presentation", "directive-like", "pipe-like", "module", "store", "primitive", "infra"]
+    },
+    "rev": { "type": "integer", "minimum": 0 },
+    "state": { "enum": ["DISCOVERED", "SPECIFIED", "READY", "CONVERTING", "BUILT", "WIRED", "VERIFYING", "DIVERGENT", "REPAIRING", "PASSING", "AUDITED", "INTEGRATED", "SOAKING", "ACCEPTED", "TOMBSTONED", "ESCALATED", "DEFERRED", "QUARANTINED"] },
+    "stateSince": { "type": "string", "format": "date-time" },
+    "deps": { "type": "array", "items": { "type": "string" } },
+    "dependents": { "type": "array", "items": { "type": "string" } },
+    "risk": {
+      "type": "object",
+      "required": ["score", "tier", "factors"],
+      "properties": {
+        "score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "tier": { "enum": ["low", "medium", "high", "critical"] },
+        "factors": { "type": "array", "items": { "type": "string" }, "description": "Neutral free-text risk factors; framework-specific factors (e.g. 'directive-link', 'jquery-plugin', 'signal-effect-chain') are permitted strings but not enumerated here." }
+      }
+    },
+    "motifs": { "type": "array", "items": { "type": "string" } },
+    "recipes": { "type": "array", "items": { "type": "string" } },
+    "scenarios": { "type": "array", "items": { "type": "string" } },
+    "seam": {
+      "type": "object",
+      "properties": {
+        "type": { "enum": ["route-shell", "element-bridge", "none-internal"] },
+        "flag": { "type": "string" }
+      }
+    },
+    "attempts": {
+      "type": "object",
+      "required": ["convert", "repair"],
+      "properties": {
+        "convert": { "type": "integer", "minimum": 0 },
+        "repair": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "required": ["maxConvertAttempts", "maxRepairAttempts", "tokenCap", "tokensSpent"],
+      "properties": {
+        "maxConvertAttempts": { "type": "integer" },
+        "maxRepairAttempts": { "type": "integer" },
+        "tokenCap": { "type": "integer" },
+        "tokensSpent": { "type": "integer" },
+        "wallClockCapMinutes": { "type": "integer" }
+      }
+    },
+    "modelTier": { "enum": ["cheap", "standard", "strong", "human"] },
+    "artifacts": {
+      "type": "object",
+      "properties": {
+        "legacyPaths": { "type": "array", "items": { "type": "string" } },
+        "targetPaths": { "type": "array", "items": { "type": "string" } },
+        "stories": { "type": "array", "items": { "type": "string" } },
+        "tests": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "sourceAdapter": {
+      "description": "Framework-specific classification/metadata for the legacy artifact this unit represents (e.g. Angular2+ component/pipe/injectable descriptor). Optional; core logic never depends on it.",
+      "$ref": "adapter-ref.schema.json"
+    },
+    "assignee": {
+      "type": ["object", "null"],
+      "properties": {
+        "role": { "type": "string" },
+        "agentId": { "type": "string" },
+        "leaseId": { "type": "string" },
+        "leaseExpiresAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "waivers": { "type": "array", "items": { "type": "string" } },
+    "openCounterexamples": { "type": "array", "items": { "type": "string" } },
+    "notes": { "type": "string" }
+  }
+}

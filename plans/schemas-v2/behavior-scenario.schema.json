@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "mx://schemas/v2/behavior-scenario.schema.json",
+  "schemaVersion": "2.0.0",
+  "title": "BehaviorScenario",
+  "description": "Framework-neutral specification of one user-observable scenario (was: BehaviorIRScenario). The exam a migrated unit must pass, expressed purely in user/DOM/ARIA/network/semantic terms — never in framework internals. Must be green against the legacy app before it counts (gate G1). Already framework-neutral in v1; v2 only removes the 'React' wording, generalizes the mock-network reference, and adds schemaVersion.",
+  "type": "object",
+  "required": ["schemaVersion", "scenarioId", "unitIds", "route", "preconditions", "userSteps", "expected", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "2.0.0" },
+    "scenarioId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9.-]+$" },
+    "title": { "type": "string" },
+    "unitIds": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+    "route": { "type": "string" },
+    "priority": { "enum": ["critical-path", "core", "edge"], "default": "core" },
+    "source": { "enum": ["recorded-session", "trace-mined", "authored", "crawler", "mutation-gap"] },
+    "preconditions": {
+      "type": "object",
+      "properties": {
+        "auth": { "type": "string" },
+        "fixtureProfile": { "type": "string", "description": "Network-mock/fixture profile id (mocking library is a harness detail, not a framework assumption)." },
+        "viewport": { "type": "string", "default": "1280x800" },
+        "clock": { "type": "string" },
+        "seed": { "type": "integer" },
+        "localStorage": { "type": "object" }
+      },
+      "required": ["fixtureProfile"]
+    },
+    "userSteps": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["action"],
+        "properties": {
+          "action": { "enum": ["navigate", "click", "fill", "select", "press", "hover", "drag", "upload", "waitForSettle", "assertCheckpoint"] },
+          "url": { "type": "string" },
+          "role": { "type": "string" },
+          "name": { "type": "string" },
+          "selector": { "type": "string" },
+          "value": { "type": "string" },
+          "key": { "type": "string" },
+          "checkpoint": { "type": "string" }
+        }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "properties": {
+        "aria": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "role": { "type": "string" }, "name": { "type": "string" }, "contains": { "type": "string" }, "count": { "type": "integer" }, "focusOrder": { "type": "array", "items": { "type": "string" } } } }
+        },
+        "dom": {
+          "type": "array",
+          "items": { "type": "object", "properties": { "selector": { "type": "string" }, "count": { "type": "integer" }, "textEquals": { "type": "string" }, "allTextEquals": { "type": "string" }, "visible": { "type": "boolean" } } }
+        },
+        "network": {
+          "type": "array",
+          "items": { "type": "object", "required": ["method", "path"], "properties": { "method": { "type": "string" }, "path": { "type": "string" }, "query": { "type": "object" }, "bodyContains": { "type": "object" }, "orderMatters": { "type": "boolean", "default": false } } }
+        },
+        "semantic": {
+          "type": "array",
+          "description": "Domain events emitted through the semantic-event probe (source-adapter shim on legacy, event layer on target).",
+          "items": { "type": "object", "required": ["event"], "properties": { "event": { "type": "string" }, "payload": { "type": "object" } } }
+        },
+        "url": { "type": "object", "properties": { "path": { "type": "string" }, "query": { "type": "object" } } },
+        "consoleErrors": { "type": "integer", "const": 0 },
+        "checkpoints": { "type": "object", "additionalProperties": { "$ref": "#/properties/expected" } }
+      }
+    },
+    "legacyTraceRefs": { "type": "array", "items": { "type": "string" } },
+    "status": {
+      "type": "object",
+      "required": ["greenOnLegacy"],
+      "properties": {
+        "greenOnLegacy": { "type": "boolean" },
+        "lastLegacyRun": { "type": "string" },
+        "calibration": { "type": "object", "properties": { "mutantsInjected": { "type": "integer" }, "mutantsKilled": { "type": "integer" }, "acceptedGaps": { "type": "array", "items": { "type": "string" } } } },
+        "flakeScreen": { "type": "object", "properties": { "runs": { "type": "integer" }, "passes": { "type": "integer" } } }
+      }
+    }
+  }
+}

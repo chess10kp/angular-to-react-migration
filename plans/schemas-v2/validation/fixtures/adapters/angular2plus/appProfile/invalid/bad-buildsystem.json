@@ -1,0 +1,6 @@
+{
+  "$doc": {
+    "buildSystem": "vite"
+  },
+  "$why": "buildSystem 'vite' not in enum"
+}
