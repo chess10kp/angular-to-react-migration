@@ -13,9 +13,7 @@ export class LaunchDarklyService {
   private client?: LDClient;
   private flags$ = new BehaviorSubject<LDFlagSet>({});
 
-  constructor(private accountService: AccountService) {
-    // MIGRATION_TODO(di): DI: 1 inject() dependency(ies) -> constructor params (accountService: AccountService); wire at construction or via a provider/context
-  }
+  constructor(private accountService: AccountService) {}
 
   init(clientSideId: string): void {
     const account = this.accountService.trackCurrentAccount()();

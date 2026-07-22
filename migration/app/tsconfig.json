@@ -19,5 +19,5 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["campaign/**/*.tsx", "campaign/**/*.service.react.ts"]
+  "include": ["campaign/**/*.tsx", "campaign/**/*.service.react.ts", "campaign/hooks/**/*.ts"]
 }

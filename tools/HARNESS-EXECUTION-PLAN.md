@@ -244,7 +244,7 @@ is not yet done). The ratchet (§3.3) reads from the latest row.
 
 | Date | codemod tests | scaffold tsc errors | residue lines | parity tests | parity units accepted |
 |---|---|---|---|---|---|
-| 2026-07-22 | _pending_ | 30 (baseline.json) | 13 | _pending_ | _pending_ |
+| 2026-07-22 | _pending_ | 12 (baseline.json) | 13 | _pending_ | _pending_ |
 | _pending Task 0_ | _run `npm test`_ | _run scaffold_ | _run ledger_ | _run `npm test`_ | _run parity_ |
 
 ---

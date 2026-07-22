@@ -1,5 +1,3 @@
-import dayjs from 'dayjs/esm';
-
 export interface ICampaign {
   id: number;
   name: string;
@@ -7,7 +5,7 @@ export interface ICampaign {
   budget: number;
   active: boolean;
   tenantId: string;
-  startDate?: dayjs.Dayjs | null;
+  startDate?: string | null;
 }
 
 export type NewCampaign = Omit<ICampaign, 'id'> & { id: null };
