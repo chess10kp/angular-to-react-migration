@@ -88,7 +88,8 @@ def transform_template_to_expr(source: str, file_name: str) -> dict {
     return {
         "ok": True, "jsxExpr": emitted["code"], "errors": [],
         "imports": list(emitted["imports"]), "coverage": coverage,
-        "usesTranslate": parsed["usesTranslate"], "helpers": parsed["helpers"]
+        "usesTranslate": parsed["usesTranslate"], "helpers": parsed["helpers"],
+        "nodes": parsed["nodes"]
     };
 }
 
@@ -111,7 +112,8 @@ def transform_template(source: str, file_name: str) -> dict {
     }
     return {
         "ok": True, "jsx": fmt["code"], "errors": [], "imports": raw["imports"],
-        "coverage": raw["coverage"], "usesTranslate": raw["usesTranslate"], "helpers": raw["helpers"]
+        "coverage": raw["coverage"], "usesTranslate": raw["usesTranslate"], "helpers": raw["helpers"],
+        "nodes": raw.get("nodes", [])
     };
 }
 
@@ -156,13 +158,15 @@ def transform_component(ts_source: str, ts_path: str) -> dict {
     helpers = [];
     todos = [];
 
+    template_ir_nodes = [];
     if template_html is not None {
         tname = model["templateUrl"] if model["templateUrl"] else (ts_path + "#inline");
         raw = transform_template_to_expr(template_html, tname);
         if not raw["ok"] {
             return {
                 "ok": False, "tsx": "", "errors": raw["errors"], "todos": [],
-                "templateCoverage": raw["coverage"], "templateSource": template_source
+                "templateCoverage": raw["coverage"], "templateSource": template_source,
+                "irNodes": raw.get("nodes", [])
             };
         }
         jsx_expr = raw["jsxExpr"];
@@ -170,6 +174,7 @@ def transform_component(ts_source: str, ts_path: str) -> dict {
         template_coverage = raw["coverage"];
         uses_translate = raw["usesTranslate"];
         helpers = raw["helpers"];
+        template_ir_nodes = raw.get("nodes", []);
         todos += raw["coverage"]["todoReasons"];
     } else {
         todos.append("no template (templateUrl/template) found on @Component");
@@ -189,12 +194,14 @@ def transform_component(ts_source: str, ts_path: str) -> dict {
         return {
             "ok": False, "tsx": emitted["code"],
             "errors": ["prettier failed: " + str(fmt["error"])],
-            "todos": todos, "templateCoverage": template_coverage, "templateSource": template_source
+            "todos": todos, "templateCoverage": template_coverage, "templateSource": template_source,
+            "irNodes": template_ir_nodes
         };
     }
     return {
         "ok": True, "tsx": fmt["code"], "errors": [], "todos": todos,
-        "templateCoverage": template_coverage, "templateSource": template_source
+        "templateCoverage": template_coverage, "templateSource": template_source,
+        "irNodes": template_ir_nodes
     };
 }
 
@@ -328,9 +335,152 @@ def print_report(outcomes: list, opts: dict) {
 # a stable, structured, resumable per-residue record. The reason strings that
 # reach the driver are the bare `todos.push(...)` strings (NOT the inline
 # `MIGRATION_TODO(cat)` comments), so `category` is derived from their stable
-# prefixes. Component/service residue carries no span, so `span` is null and the
-# stable id falls back to an in-file+category ordinal (schema §4).
+# prefixes. `span:{startLine,endLine}` is resolved from the formatted emit
+# (grep `MIGRATION_TODO` anchors in the written .tsx/.jsx/.react.ts), with IR
+# `SourceLoc` on template TodoNodes as a fallback when no emit body is present.
 # ---------------------------------------------------------------------------
+
+def ledger_emit_path(source_file: str, mode: str) -> str {
+    if mode == "component" {
+        return out_path(source_file, ".component.ts", ".tsx");
+    }
+    if mode == "service" {
+        return out_path(source_file, ".service.ts", ".service.react.ts");
+    }
+    return out_path(source_file, ".html", ".jsx");
+}
+
+def migration_todo_lines(content: str) -> list {
+    lines = [];
+    i = 0;
+    for line in content.splitlines() {
+        i += 1;
+        if "MIGRATION_TODO" in line {
+            lines.append({"line": i, "text": line});
+        }
+    }
+    return lines;
+}
+
+def todo_category_tag(category: str) -> str {
+  if category in ["effect", "lifecycle"] {
+    return "MIGRATION_TODO(effect)";
+  }
+  tags = {
+    "di": "MIGRATION_TODO(di)",
+    "rxjs": "MIGRATION_TODO(rxjs)",
+    "state": "MIGRATION_TODO(state)",
+    "forms": "MIGRATION_TODO(forms)",
+    "viewchild": "MIGRATION_TODO(viewchild)",
+    "rename": "MIGRATION_TODO(rename)",
+    "this": "MIGRATION_TODO(this)",
+    "host": "MIGRATION_TODO(host)",
+    "helpers": "MIGRATION_TODO(helpers)",
+    "async": "MIGRATION_TODO(async)",
+    "field": "MIGRATION_TODO(field)",
+    "openapi": "MIGRATION_TODO(openapi)",
+    "derived": "MIGRATION_TODO(derived)"
+  };
+  return tags.get(category, "MIGRATION_TODO");
+}
+
+def span_match_score(reason: str, todo_line: dict) -> int {
+    text = todo_line["text"];
+    cat = residue_category(reason);
+    score = 0;
+    tag = todo_category_tag(cat);
+    if tag in text {
+        score += 10;
+    } elif "MIGRATION_TODO:" in text and cat in ["tpl-node", "tpl-expr", "tpl-style", "tpl-event", "async"] {
+        score += 8;
+    }
+    sym = first_backtick(reason);
+    if sym and sym in text {
+        score += 25;
+    }
+    tok = di_token(reason);
+    if tok and tok in text {
+        score += 20;
+    }
+    m = re.search(r"lifecycle `([^`]+)`", reason);
+    if m and m.group(1) in text {
+        score += 15;
+    }
+    frag = re.sub(r"`[^`]*`", "", reason).strip();
+    if frag and (frag in text or frag[0:min(len(frag), 40)] in text) {
+        score += 5;
+    }
+    return score;
+}
+
+def resolve_todo_spans(content: str, reasons: list, ir_spans: dict = None) -> list {
+    available = migration_todo_lines(content);
+    spans = [];
+    for reason in reasons {
+        best = None;
+        best_score = 0;
+        for todo_line in available {
+            s = span_match_score(reason, todo_line);
+            if s > best_score {
+                best_score = s;
+                best = todo_line;
+            }
+        }
+        if best and best_score > 0 {
+            line = best["line"];
+            spans.append({"startLine": line, "endLine": line});
+            available = [t for t in available if t["line"] != best["line"]];
+        } elif ir_spans and (reason in ir_spans) {
+            spans.append(ir_spans[reason]);
+        } elif len(available) > 0 {
+            line = available[0]["line"];
+            spans.append({"startLine": line, "endLine": line});
+            available = available[1:];
+        } else {
+            spans.append({"startLine": 1, "endLine": 1});
+        }
+    }
+    return spans;
+}
+
+def ir_todo_span_map(nodes: list) -> dict {
+    spans = {};
+    for n in nodes {
+        t = n["type"];
+        if t == "todo" {
+            loc = n.get("loc", {});
+            line = loc.get("line");
+            if line {
+                spans[n["reason"]] = {"startLine": line, "endLine": line};
+            }
+        } elif t == "element" {
+            for (k, v) in ir_todo_span_map(n["children"]).items() {
+                spans[k] = v;
+            }
+        } elif t == "if" {
+            for b in n["branches"] {
+                for (k, v) in ir_todo_span_map(b["children"]).items() {
+                    spans[k] = v;
+                }
+            }
+        } elif t == "for" {
+            for (k, v) in ir_todo_span_map(n["children"]).items() {
+                spans[k] = v;
+            }
+            if n.get("empty") {
+                for (k, v) in ir_todo_span_map(n["empty"]).items() {
+                    spans[k] = v;
+                }
+            }
+        }
+    }
+    return spans;
+}
+
+def attach_todo_spans(outcome: dict, emit_content: str, mode: str) {
+    ir_spans = ir_todo_span_map(outcome.get("irNodes", []));
+    outcome["todoSpans"] = resolve_todo_spans(emit_content or "", outcome["todoReasons"], ir_spans);
+}
 
 def normalize_reason(reason: str) -> str {
     # identical to the reporter's cluster key (print_report / cli.ts:143)
@@ -669,16 +819,17 @@ def learn(spec_path: str, recipes_path: str) {
 }
 
 
-def build_ledger(outcomes: list, mode: str, recipes: list) -> list {
+def build_ledger(outcomes: list, mode: str, recipes: list, cwd: str = ".") -> list {
     # First pass: DI token fan-out across all files (the one cross-file signal).
     token_fanout = {};
     for o in outcomes {
+        ledger_file = os.path.relpath(ledger_emit_path(o["file"], mode), cwd).replace("\\", "/");
         for reason in o["todoReasons"] {
             if residue_category(reason) == "di" {
                 tok = di_token(reason);
                 if tok {
                     if tok not in token_fanout { token_fanout[tok] = {}; }
-                    token_fanout[tok][o["file"]] = True;
+                    token_fanout[tok][ledger_file] = True;
                 }
             }
         }
@@ -686,8 +837,10 @@ def build_ledger(outcomes: list, mode: str, recipes: list) -> list {
 
     records = [];
     for o in outcomes {
-        file = o["file"].replace("\\", "/");
+        file = os.path.relpath(ledger_emit_path(o["file"], mode), cwd).replace("\\", "/");
+        spans = o.get("todoSpans", []);
         ordinals = {};  # (category) -> next ordinal within this file
+        idx = 0;
         for reason in o["todoReasons"] {
             cat = residue_category(reason);
             norm = normalize_reason(reason);
@@ -696,10 +849,11 @@ def build_ledger(outcomes: list, mode: str, recipes: list) -> list {
             key = " ".join([file, "#" + str(ordinal), cat, norm]);
             rid = hashlib.sha1(key.encode("utf-8")).hexdigest()[0:8];
             tok = di_token(reason) if cat == "di" else None;
+            span = spans[idx] if idx < len(spans) else {"startLine": 1, "endLine": 1};
             record = {
                 "id": rid,
                 "file": file,
-                "span": None,
+                "span": span,
                 "category": cat,
                 "fix_shape": residue_fix_shape(cat, reason),
                 "reason": residue_reason_fields(cat, reason),
@@ -714,14 +868,14 @@ def build_ledger(outcomes: list, mode: str, recipes: list) -> list {
             hint = best_recipe(recipes, record);
             if hint { record["recipe"] = hint; }
             records.append(record);
+            idx += 1;
         }
     }
 
     # deps (#3, driver-side): a `this` residue is blocked until the di/state
     # residue in the SAME file that provides each member it still references is
     # fixed (the skill's "fix the provider first" rule, made machine-readable).
-    # Scoped to `this` -> di/state joins in v1; span stays null (needs emitter
-    # offsets — a worker change that would break byte-identical output).
+    # Scoped to `this` -> di/state joins in v1.
     provider = {};  # file -> {symbol -> id}; first provider of a symbol wins.
     for rec in records {
         if rec["category"] in ["di", "state"] {
@@ -1004,6 +1158,7 @@ with entry {
     dry_run = "--dry-run" in argv;
     report_only = "--report" in argv;
     ledger = "--ledger" in argv;
+    ledger_path = "residue.jsonl";
     scaffold_dir = None;
     recipes_path = "recipes.jsonl";
     learn_spec = None;
@@ -1012,6 +1167,7 @@ with entry {
         elif a.startswith("--scaffold=") { scaffold_dir = a[len("--scaffold="):]; }
         elif a.startswith("--recipes=") { recipes_path = a[len("--recipes="):]; }
         elif a.startswith("--learn=") { learn_spec = a[len("--learn="):]; }
+        elif a.startswith("--ledger-file=") { ledger_path = a[len("--ledger-file="):]; }
     }
 
     # `--learn` is a standalone action: capture a fix into recipes.jsonl and exit.
@@ -1030,6 +1186,7 @@ with entry {
     }
 
     outcomes = [];
+    ledger_cwd = os.getcwd();
 
     if services_mode {
         for file in collect(paths, "service") {
@@ -1040,10 +1197,13 @@ with entry {
             }
             gen = r["model"] and r["model"]["generated"];
             reasons = ["generated OpenAPI client (regenerate, not migrated)"] if gen else r["todos"];
-            outcomes.append({
+            outcome = {
                 "file": file, "ok": r["ok"], "errors": r["errors"],
-                "todoNodes": len(r["todos"]), "todoReasons": reasons, "byType": {}
-            });
+                "todoNodes": len(r["todos"]), "todoReasons": reasons, "byType": {}, "irNodes": []
+            };
+            emit_body = r["ts"] if r["ok"] else "";
+            attach_todo_spans(outcome, emit_body, "service");
+            outcomes.append(outcome);
             if r["ok"] and (not dry_run) and (not report_only) {
                 write_file(out_path(file, ".service.ts", ".service.react.ts"), r["ts"]);
             }
@@ -1053,10 +1213,14 @@ with entry {
             r = transform_component(read_file(file), file);
             cov = r["templateCoverage"];
             by_type = cov["byType"] if cov else {};
-            outcomes.append({
+            outcome = {
                 "file": file, "ok": r["ok"], "errors": r["errors"],
-                "todoNodes": len(r["todos"]), "todoReasons": r["todos"], "byType": by_type
-            });
+                "todoNodes": len(r["todos"]), "todoReasons": r["todos"], "byType": by_type,
+                "irNodes": r.get("irNodes", [])
+            };
+            emit_body = r["tsx"] if r["ok"] else "";
+            attach_todo_spans(outcome, emit_body, "component");
+            outcomes.append(outcome);
             if r["ok"] and (not dry_run) and (not report_only) {
                 write_file(out_path(file, ".component.ts", ".tsx"), r["tsx"]);
             }
@@ -1065,10 +1229,14 @@ with entry {
         for file in collect(paths, "html") {
             r = transform_template(read_file(file), file);
             cov = r["coverage"];
-            outcomes.append({
+            outcome = {
                 "file": file, "ok": r["ok"], "errors": r["errors"],
-                "todoNodes": cov["todoNodes"], "todoReasons": cov["todoReasons"], "byType": cov["byType"]
-            });
+                "todoNodes": cov["todoNodes"], "todoReasons": cov["todoReasons"], "byType": cov["byType"],
+                "irNodes": r.get("nodes", [])
+            };
+            emit_body = r["jsx"] if r["ok"] else "";
+            attach_todo_spans(outcome, emit_body, "template");
+            outcomes.append(outcome);
             if r["ok"] and (not dry_run) and (not report_only) {
                 write_file(out_path(file, ".html", ".jsx"), r["jsx"]);
             }
@@ -1083,7 +1251,7 @@ with entry {
     if ledger {
         mode = "service" if services_mode else ("component" if component_mode else "template");
         recipes = recipe_set(recipes_path);
-        write_ledger(build_ledger(outcomes, mode, recipes), mode, "residue.jsonl");
+        write_ledger(build_ledger(outcomes, mode, recipes, ledger_cwd), mode, ledger_path);
     }
 
     if scaffold_dir {
