@@ -110,6 +110,59 @@ export function CampaignListComponent() {
 }
 ```
 
+## Live browser demo — both pages running simultaneously
+
+> **One command** starts both servers and shows the loop narrative:
+> ```bash
+> bash migration/demo.sh
+> ```
+
+### What it does
+| Step | What happens |
+|---|---|
+| **A — Angular "before"** | Starts `ng serve` (port 9000). `campaign-demo` route bypasses `canActivateCampaigns`; a demo HTTP interceptor stubs `/api/campaigns` and `/i18n/campaign/en.json` — no backend needed. Visit **http://localhost:9000/campaign-demo**. |
+| **B — React "after"** | Starts `vite dev` (port 5175). i18next + BrowserRouter + `MockApiEffect` seed the same 3 campaigns. Visit **http://localhost:5175/**. |
+| **C — Loop** | All 13 residue items in `migration/residue.jsonl` are `open`. Run the agentic loop: `LOOP_APPLIER=agent npx tsx migration/loop/config.mts`. Each iteration: **pick** highest-priority item → **agent edits** file → **tsc oracle** verifies (≤ baseline 12) → **commit** `fix(migration): resolve residue <id>`. |
+
+### Verified go/no-go (2026-07-22)
+
+```
+Angular:  localhost:9000/campaign-demo  → list-group-item × 3 (Spring Launch, Summer Promo, Black Friday)
+React:    localhost:5175/              → list-group-item × 3 (Spring Launch, Summer Promo, Black Friday)
+Type oracle: totalErrors=12, baseline=12 → status: pass
+```
+
+### Demo-only files (clearly labeled, do NOT commit to production)
+
+| File | Purpose |
+|---|---|
+| `references/jhipster-ng17-fixture/src/main/webapp/app/campaign/demo/campaign-demo.interceptor.ts` | Stubs `/api/campaigns` + `/i18n/campaign/en` |
+| `references/jhipster-ng17-fixture/src/main/webapp/app/campaign/demo/campaign-demo.routes.ts` | Guard-free copy of campaign routes |
+| `migration/app/src/main.tsx` | React entry: i18next init, BrowserRouter, `MockApiEffect` seed |
+| `migration/app/vite.config.ts`, `migration/app/index.html` | Vite shell |
+| `migration/demo.sh` | One-command demo runner |
+
+### Loop commands (from repo root)
+
+```bash
+# Check what's open
+python3 -c "
+import json
+for l in open('migration/residue.jsonl'):
+    r=json.loads(l)
+    if r['status']=='open':
+        print(r['id'], r['category'], r['file'].split('/')[-1])
+"
+
+# Verify the type oracle
+npx tsx migration/loop/verify.mts type migration/app --residue migration/residue.jsonl
+
+# Run the agentic loop (needs: claude CLI on PATH and authenticated)
+LOOP_APPLIER=agent npx tsx migration/loop/config.mts
+```
+
+See `migration/RUN.md §Stage 3` for the full burndown protocol.
+
 ## Cleanup
 
 `.tsx`/`.react.ts` are demo outputs, not committed source — delete before re-running the Angular

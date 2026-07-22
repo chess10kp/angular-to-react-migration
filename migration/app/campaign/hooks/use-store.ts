@@ -1,4 +1,4 @@
-import { useCallback, useSyncExternalStore } from 'react';
+import { useCallback, useMemo, useSyncExternalStore } from 'react';
 import type { CampaignAction } from '../store/campaign.actions';
 import { CampaignActions } from '../store/campaign.actions';
 import type { CampaignState } from '../store/campaign.selectors';
@@ -53,12 +53,14 @@ function getSnapshot(): CampaignState {
 }
 
 export function useStore() {
-  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
-  return {
+  useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  // dispatch and getSnapshot are module-level stable refs; memoize the wrapper so
+  // callers that put `store` in useEffect deps don't re-run on every state change.
+  return useMemo(() => ({
     dispatch,
-    getState: () => snapshot,
-    select: <T>(selector: (s: CampaignState) => T) => selector(snapshot),
-  };
+    getState: getSnapshot,
+    select: <T>(selector: (s: CampaignState) => T) => selector(getSnapshot()),
+  }), []);
 }
 
 export function useCampaignSelector<T>(selector: (s: CampaignState) => T): T {
