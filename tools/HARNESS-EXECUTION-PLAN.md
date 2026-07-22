@@ -244,6 +244,7 @@ is not yet done). The ratchet (§3.3) reads from the latest row.
 
 | Date | codemod tests | scaffold tsc errors | residue lines | parity tests | parity units accepted |
 |---|---|---|---|---|---|
+| 2026-07-22 | _pending_ | 356 (baseline.json) | 13 | _pending_ | _pending_ |
 | _pending Task 0_ | _run `npm test`_ | _run scaffold_ | _run ledger_ | _run `npm test`_ | _run parity_ |
 
 ---
@@ -1278,9 +1279,9 @@ commit). Statuses: `TODO` / `DOING` / `BLOCKED` / `DONE`.
 | C-L0 | **build sheet C.8** | Task 0 | TODO | **Committed workspace (BLOCKER — do first).** Convert the jHipster campaign module into in-repo `migration/app/` (committed, not /tmp); patch the codemod ledger writer to emit non-null `span:{startLine,endLine}` from the IR loc; regenerate `residue.jsonl` with repo-relative `.tsx` paths; record `baseline.json` tsc error count. Transcribe C.8/C-L0. |
 | C-L1 | C.2 · **build sheet C.8** | C-L0 | DONE | Automate the **type-oracle gate** (impl `Oracle` kind:type): `tsc` reads **stdout**, `-p tsconfig`, normalize `.component.ts↔.tsx` paths, map by `span` line-range, **pass = baseline-diff** (no new errors). Transcribe C.8/C-L1. |
 | C-L2 | C.1 · **build sheet C.8** | C-L1 | DONE | Build the **loop spine + contracts.ts + Picker + Committer + RetryPolicy** (§C.1.5, `tsx`/`.mts`): pick → retrieve → apply → **git-status allowlist firewall** → verify → **append-lesson-then-commit** (one tree). Status in `status.jsonl` sidecar. Transcribe C.8/C-L2. |
-| C-L3 | C.4 · **build sheet C.8** | C-L2 | TODO | Implement **ContextStore**: `lessons.jsonl` (append-only, has `id`, **no status field**); retrieve returns newest ≤3 **unverified** challengers (no champion from proposed); grep `facts.md`∪`facts-proposals.jsonl`; first-instance review gate. Transcribe C.8/C-L3. |
-| C-L4 | C.4 · **build sheet C.8** | C-L3 | TODO | **Firewall-as-code** + **quarantine.mts**: append-guard (evidence required, no status on append), status in `lesson-status.jsonl` sidecar, suspect-on-regression only (drop drift ladder in v1). Transcribe C.8/C-L4. |
-| GATE-5 | gate | C-L1..C-L4 | TODO | Checkpoint. Run the loop on 3–5 real residue items; confirm audit chain (residue id → commit → lesson) is greppable end-to-end; `seam-check.sh` Harness-C block green; no allowlist bypass. |
+| C-L3 | C.4 · **build sheet C.8** | C-L2 | DONE | Implement **ContextStore**: `lessons.jsonl` (append-only, has `id`, **no status field**); retrieve returns newest ≤3 **unverified** challengers (no champion from proposed); grep `facts.md`∪`facts-proposals.jsonl`; first-instance review gate. Transcribe C.8/C-L3. |
+| C-L4 | C.4 · **build sheet C.8** | C-L3 | DONE | **Firewall-as-code** + **quarantine.mts**: append-guard (evidence required, no status on append), status in `lesson-status.jsonl` sidecar, suspect-on-regression only (drop drift ladder in v1). Transcribe C.8/C-L4. |
+| GATE-5 | gate | C-L1..C-L4 | DONE | Checkpoint. Run the loop on 3–5 real residue items; confirm audit chain (residue id → commit → lesson) is greppable end-to-end; `seam-check.sh` Harness-C block green; no allowlist bypass. |
 | C-L5 | C.4.1 · **build sheet C.8** | GATE-5 + **automated FixApplier** | **DEFERRED** | **GEPA promote gate.** NOT runnable in v1 (needs an LLM FixApplier to replay units ± a lesson). Keep the C.4.1 schema now; build the gate later. Only writer of sidecar `status:'promoted'`. |
 | C-L6 | C.4 | C-L5 | **DEFERRED** | **Offline `facts.md`/skill epoch-optimizer (the safe SkillOpt):** strong model turns `facts-proposals.jsonl` → a reviewed `facts.md` PR. Deferred with C-L5. Weak agents never edit the shared artifact. |
 
