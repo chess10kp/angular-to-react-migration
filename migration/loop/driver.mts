@@ -9,20 +9,6 @@ import type {
   Verdict,
 } from './contracts.ts';
 
-const LOOP_META_PATHS = new Set([
-  'migration/loop/status.jsonl',
-  'migration/residue.jsonl',
-]);
-
-function filterApplierTouches(touched: string[]): string[] {
-  return touched.filter((p) => {
-    const norm = p.replace(/\\/g, '/').replace(/^\.\//, '');
-    if (LOOP_META_PATHS.has(norm)) return false;
-    if (norm.includes('BLOCKED-') && norm.endsWith('.md')) return false;
-    return true;
-  });
-}
-
 export function makeLesson(
   item: ResidueItem,
   fix: FixResult,

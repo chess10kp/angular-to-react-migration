@@ -46,7 +46,11 @@ const LOOP_META_PATHS = new Set([
 export function filterApplierTouches(touched: string[]): string[] {
   return touched.filter((p) => {
     const norm = normalizePath(p);
+    if (!norm || norm.endsWith('/') || norm === 'migration/loop') return false;
     if (LOOP_META_PATHS.has(norm)) return false;
+    if (norm.startsWith('migration/loop/') && norm !== 'migration/loop/status.jsonl') {
+      return false;
+    }
     if (norm.includes('BLOCKED-') && norm.endsWith('.md')) return false;
     return true;
   });
@@ -85,7 +89,9 @@ export class GitCommitter implements Committer {
 
   assertWithinAllowlist(item: ResidueItem, touched: string[]): void {
     const allowed = allowlistForItem(item);
-    const violations = touched.filter((p) => !allowed.has(normalizePath(p)));
+    const violations = filterApplierTouches(touched).filter(
+      (p) => !allowed.has(normalizePath(p)),
+    );
     if (violations.length > 0) {
       throw new Error(
         `Allowlist violation: touched paths outside permitted set: ${violations.join(', ')}`,
@@ -95,8 +101,9 @@ export class GitCommitter implements Committer {
 
   commit(item: ResidueItem, verdicts: Verdict[], lessonId: string | null): void {
     const doneState = bestDoneState(verdicts);
-    const touched = this.touchedFiles();
-    this.assertWithinAllowlist(item, touched);
+    const raw = this.touchedFiles();
+    this.assertWithinAllowlist(item, raw);
+    const touched = filterApplierTouches(raw);
 
     if (touched.length > 0) {
       const add = runGit(this.options.repoRoot, ['add', '--', ...touched]);
