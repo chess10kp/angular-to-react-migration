@@ -4,9 +4,11 @@ Research, plans, and a reusable codemod harness for migrating large Angular
 codebases to React — combining deterministic AST transforms with agentic
 repair under evidence gates.
 
-> **Status:** research + design + prototype harness. Not a finished product.
-> See [`REPORT.md`](./REPORT.md) (the research base), [`PLAN.md`](./PLAN.md)
-> (the build plan), and [`plans/`](./plans/) (the executable design).
+> **Status:** research + design + **working codemod harness** (slices 1–9, type-oracle
+> scaffold, residue ledger, recipe store) with an operator-agent repair loop. Not a finished
+> migration or full 8-module harness. See [`TODO.md`](./TODO.md) for the grounded snapshot,
+> [`REPORT.md`](./REPORT.md) (research base), [`PLAN.md`](./PLAN.md) (build plan), and
+> [`plans/`](./plans/) (executable design for the full harness).
 
 ## What's in this repo
 
@@ -16,7 +18,8 @@ repair under evidence gates.
 | [`PLAN.md`](./PLAN.md) | The build plan: a reusable `harness-core` (scheduling, state, evidence gates, retries, replay, learning) with an Angular 2+ adapter, piloted against OneCX as Profile 1. |
 | [`IDEAS.md`](./IDEAS.md) | Working notes / future ideas. |
 | [`plans/`](./plans/) | A complete, self-calibrating design for an agentic migration harness: architecture, the 18-state unit state machine, tool contracts, 16 agent role cards, phase playbooks P0–P7, prompt templates, and JSON Schemas for every shared artifact. *(Note: the `plans/` thread targets AngularJS 1.x; the `PLAN.md` thread targets Angular 2+ — the two are companion designs, see `plans/README.md`.)* |
-| [`tools/codemod-harness/`](./tools/codemod-harness/) | The actual prototype: an Angular 17 → React codemod pipeline. Template AST → Template IR → JSX, with the AST libraries isolated behind single-file seams. See its [README](./tools/codemod-harness/README.md). |
+| [`tools/codemod-harness/`](./tools/codemod-harness/) | The working prototype: Angular 17 → React codemod pipeline (templates, components, services, lifecycle, DI, `this.` rewiring — slices 1–9). Jac driver adds `--scaffold` (`tsc` gate), `--ledger`, and `--recipes`/`--learn`. See its [README](./tools/codemod-harness/README.md) and [`TODO.md`](./TODO.md). |
+| [`TODO.md`](./TODO.md) | Grounded status: what's built, what's missing, and recommended sequencing. |
 
 ## Core thesis (from `REPORT.md`)
 
