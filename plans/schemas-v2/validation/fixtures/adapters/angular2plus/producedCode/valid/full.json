@@ -1,7 +1,0 @@
-{
-  "construct": "component",
-  "standalone": true,
-  "changeDetection": "OnPush",
-  "usesSignals": true,
-  "moduleFederationExposedAs": "./InvoiceTable"
-}

@@ -1,7 +1,0 @@
-{
-  "$doc": {
-    "angularVersion": "17.0.0",
-    "ssr": true
-  },
-  "$why": "additionalProperties:false rejects 'ssr'"
-}

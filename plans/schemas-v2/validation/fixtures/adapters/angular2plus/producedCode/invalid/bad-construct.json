@@ -1,6 +1,0 @@
-{
-  "$doc": {
-    "construct": "guard"
-  },
-  "$why": "producedCode construct 'guard' not in its enum"
-}

@@ -5,7 +5,7 @@ Last updated: 2026-07-21. This doc supersedes earlier summaries that described t
 
 ## Long-term target
 
-Per [`PLAN.md`](./PLAN.md) and [`plans/HARNESS-BOUNDARY.md`](./plans/HARNESS-BOUNDARY.md), the
+Per [`PLAN.md`](./PLAN.md) (the harness-boundary section), the
 long-term product is a reusable **8-module agentic migration harness** (`harness-core`,
 `source-angular`, `target-react`, `profile-onecx`, `model-gateway`, `oracle`,
 `recipe-registry`, `operator-control`). Thesis: deterministic codemods do the bulk; agents repair
@@ -84,7 +84,7 @@ evidence-based promotion for semantic correctness at scale.
 ### 2. Full 8-module harness — deliberate non-goal (for now)
 
 `harness-core` state machine, `model-gateway`, standalone `recipe-registry`,
-`operator-control`, etc. remain **designed in `plans/` but unimplemented**. Reversing the
+`operator-control`, etc. remain **designed in `PLAN.md` but unimplemented**. Reversing the
 2026-07-18 pivot is an explicit conversation, not an assumed blocker.
 
 ### 3. Slice 10+ deterministic residue burn-down
@@ -117,8 +117,8 @@ Both need a rehearsal path before production.
 
 ### 6. Knowledge-transfer / review lane (RISKS F12)
 
-Review-packet auditability and rotation-through-escalation design exists in `plans/` but is
-unbuilt. Risk: seniors rubber-stamp or abandon review packets; nobody learns the new codebase.
+Review-packet auditability and rotation-through-escalation were designed (in the now-removed
+AngularJS `plans/` thread) but are unbuilt. Risk: seniors rubber-stamp or abandon review packets; nobody learns the new codebase.
 
 ## Option space (corrected sequencing)
 

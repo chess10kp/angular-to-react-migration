@@ -1,5 +1,0 @@
-{
-  "relation": "content-projection",
-  "contentProjectionSelector": "[header]",
-  "tokenName": "InvoiceService"
-}

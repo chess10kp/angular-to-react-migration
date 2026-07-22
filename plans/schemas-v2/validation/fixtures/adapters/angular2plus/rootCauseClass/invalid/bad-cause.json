@@ -1,6 +1,0 @@
-{
-  "$doc": {
-    "cause": "race-condition"
-  },
-  "$why": "cause 'race-condition' not in enum"
-}

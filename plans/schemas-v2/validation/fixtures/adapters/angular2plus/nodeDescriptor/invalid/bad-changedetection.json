@@ -1,7 +1,0 @@
-{
-  "$doc": {
-    "construct": "component",
-    "changeDetection": "onpush"
-  },
-  "$why": "changeDetection must be 'Default' or 'OnPush'"
-}

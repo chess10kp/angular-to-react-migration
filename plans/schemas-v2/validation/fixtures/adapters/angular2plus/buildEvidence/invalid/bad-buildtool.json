@@ -1,6 +1,0 @@
-{
-  "$doc": {
-    "buildTool": "rollup"
-  },
-  "$why": "buildTool 'rollup' not in enum"
-}

@@ -1,7 +1,0 @@
-{
-  "$doc": {
-    "adapterId": "angular2plus",
-    "adapterVersion": "2.0.0"
-  },
-  "$why": "missing required 'data'"
-}

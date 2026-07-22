@@ -1,5 +1,6 @@
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { AgentFixApplier } from './fix-applier-agent.mts';
 import { GitCommitter } from './committer.mts';
 import { runDriver } from './driver.mts';
 import { JsonlPicker } from './picker.mts';
@@ -22,6 +23,8 @@ export interface LoopConfig {
   baselinePath?: string;
   blockedDir?: string;
   applier?: FixApplier;
+  /** 'pause' (human/agent-in-the-loop, default) | 'agent' (headless AgentFixApplier). */
+  applierKind?: 'pause' | 'agent';
   oracles?: Oracle[];
 }
 
@@ -48,7 +51,13 @@ export function createLoopConfig(overrides: LoopConfig = {}) {
   const store = new JsonlContextStore({ repoRoot });
   const committer = new GitCommitter({ repoRoot });
   const retry = new BudgetRetryPolicy();
-  const applier = overrides.applier ?? new PauseFixApplier();
+  const applierKind =
+    overrides.applierKind ?? (process.env.LOOP_APPLIER as 'pause' | 'agent' | undefined) ?? 'pause';
+  const applier =
+    overrides.applier ??
+    (applierKind === 'agent'
+      ? new AgentFixApplier({ repoRoot })
+      : new PauseFixApplier());
   const oracles =
     overrides.oracles ??
     ([

@@ -8,7 +8,7 @@ repair under evidence gates.
 > scaffold, residue ledger, recipe store) with an operator-agent repair loop. Not a finished
 > migration or full 8-module harness. See [`TODO.md`](./TODO.md) for the grounded snapshot,
 > [`REPORT.md`](./REPORT.md) (research base), [`PLAN.md`](./PLAN.md) (build plan), and
-> [`plans/`](./plans/) (executable design for the full harness).
+> [`migration/RUN.md`](./migration/RUN.md) (the end-to-end run entrypoint for an agent).
 
 ## What's in this repo
 
@@ -17,7 +17,7 @@ repair under evidence gates.
 | [`REPORT.md`](./REPORT.md) | Literature + industry review: "Agentic Angular to React Migration at Scale." Argues for a hybrid deterministic-codemods + agents + human-gates model, with the evidence base (Google, Amazon AWS Transform, MigrationBench, etc.). |
 | [`PLAN.md`](./PLAN.md) | The build plan: a reusable `harness-core` (scheduling, state, evidence gates, retries, replay, learning) with an Angular 2+ adapter, piloted against OneCX as Profile 1. |
 | [`IDEAS.md`](./IDEAS.md) | Working notes / future ideas. |
-| [`plans/`](./plans/) | A complete, self-calibrating design for an agentic migration harness: architecture, the 18-state unit state machine, tool contracts, 16 agent role cards, phase playbooks P0–P7, prompt templates, and JSON Schemas for every shared artifact. *(Note: the `plans/` thread targets AngularJS 1.x; the `PLAN.md` thread targets Angular 2+ — the two are companion designs, see `plans/README.md`.)* |
+| [`migration/RUN.md`](./migration/RUN.md) | The single end-to-end run entrypoint: codemod the target → scaffold → burn residue down, all agent-driven. A fresh session reads this one file and runs the whole flow. |
 | [`tools/codemod-harness/`](./tools/codemod-harness/) | The working prototype: Angular 17 → React codemod pipeline (templates, components, services, lifecycle, DI, `this.` rewiring — slices 1–9). Jac driver adds `--scaffold` (`tsc` gate), `--ledger`, and `--recipes`/`--learn`. See its [README](./tools/codemod-harness/README.md) and [`TODO.md`](./TODO.md). |
 | [`TODO.md`](./TODO.md) | Grounded status: what's built, what's missing, and recommended sequencing. |
 
