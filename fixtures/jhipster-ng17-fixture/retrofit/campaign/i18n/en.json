@@ -1,0 +1,12 @@
+{
+  "title": "Campaigns",
+  "new": "New campaign",
+  "name": "Name",
+  "slug": "Slug",
+  "budget": "Budget",
+  "active": "Active",
+  "empty": "No campaigns yet",
+  "save": "Save",
+  "loading": "Loading campaigns…",
+  "invalidSlug": "Slug must be lowercase, digits and dashes only"
+}

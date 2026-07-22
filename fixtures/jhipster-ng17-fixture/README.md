@@ -15,9 +15,16 @@ cp fixtures/jhipster-ng17-fixture/app.jdl references/jhipster-ng17-fixture/
 cd references/jhipster-ng17-fixture
 npx generator-jhipster@8.5.0 jdl app.jdl
 npm install
+# Apply the differentiator retrofit (Transloco/NgRx/Okta/LaunchDarkly campaign module):
+node ../fixtures/jhipster-ng17-fixture/retrofit/apply-retrofit.mjs
+npm install            # picks up the 5 retrofit deps
 npm run build
 npm test
 ```
+
+The retrofit is **idempotent** — safe to re-run. See
+[`retrofit/README.md`](./retrofit/README.md) for exactly which real-target surfaces it
+exercises and what it edits.
 
 Expected outcome (as of the original generation):
 
@@ -35,4 +42,5 @@ npm run build
 npm test
 ```
 
-Tests read `references/jhipster-ng17-fixture/src/main/webapp/app/` directly.
+Tests read `references/jhipster-ng17-fixture/src/main/webapp/app/` directly, including the
+retrofitted `campaign/` module (the differentiator exerciser — see `retrofit/`).

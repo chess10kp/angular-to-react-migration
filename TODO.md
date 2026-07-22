@@ -94,13 +94,16 @@ reactive forms, router call-site rewiring (`Router.navigate`), RxJS teardown ins
 `@ViewChild`/template refs, `ng-content`/`ng-template`, OpenAPI client regen, UI library mapping.
 Cheap and compounding, but diminishing returns (RISKS §4).
 
-### 4. OneCX profile / fixture gap
+### 4. Real-target profile / fixture gap
 
-The JHipster fixture deliberately lacks the bespoke pieces that dominate the real app:
+The JHipster stand-in deliberately lacks the bespoke pieces that dominate the real app. The
+[`fixtures/jhipster-ng17-fixture/retrofit/`](./fixtures/jhipster-ng17-fixture/retrofit/) overlay
+now covers the **framework-level** differentiators (Transloco, Okta, NgRx, LaunchDarkly,
+base-class, permissions, guards/resolvers, validators) in real Angular code. Still **uncovered**:
 
-- 3-mechanism feature-flag subsystem (plain enable, per-user cohorts, tenant-UUID rules) — §124
-- Bid-list page bloat (10 modals), UUIP shared services, modal service-closures
-- HttpClient interceptor chain — §127
+- `webcore` host / Module-Federation mounting + custom webpack plugins (both `❓ OPEN` —
+  discovery; do not synthesize blindly).
+- Bid-list page bloat (10 modals), UUIP shared services, modal service-closures.
 - **Remote compatibility matrix** (§131) — which remotes become web-components vs compatibility
   islands vs block shell flip. **Independently gates the shell flip**; not gated on the behavioral
   oracle.
