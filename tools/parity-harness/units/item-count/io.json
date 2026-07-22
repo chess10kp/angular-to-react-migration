@@ -1,0 +1,6 @@
+{
+  "unitId": "ItemCountComponent",
+  "inputs": ["page", "pageSize", "total", "locale"],
+  "outputs": ["itemCountRendered"],
+  "state": []
+}

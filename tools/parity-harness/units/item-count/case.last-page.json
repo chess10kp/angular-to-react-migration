@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "1.0.0",
+  "unitId": "ItemCountComponent",
+  "caseId": "last-page",
+  "title": "Partial last page renders the correct range, updates on input change, and translates",
+  "env": { "viewport": "1280x800", "locale": "en", "seed": 1 },
+  "initialInputs": { "page": 3, "pageSize": 10, "total": 25 },
+  "steps": [
+    { "action": "waitForSettle" },
+    { "action": "checkpoint", "name": "after-mount" },
+    { "action": "setInputs", "inputs": { "page": 1 } },
+    { "action": "checkpoint", "name": "first-page" },
+    { "action": "setInputs", "inputs": { "total": 0 } },
+    { "action": "checkpoint", "name": "empty" },
+    { "action": "setInputs", "inputs": { "total": 25, "locale": "de", "page": 3 } },
+    { "action": "checkpoint", "name": "translated" }
+  ],
+  "expected": {
+    "after-mount": {
+      "visibleText": ["Showing 21–25 of 25"],
+      "aria": [{ "role": "status", "contains": "21–25" }],
+      "events": [{ "name": "itemCountRendered", "payloadContains": { "start": 21, "end": 25, "total": 25 } }]
+    },
+    "first-page": { "visibleText": ["Showing 1–10 of 25"] },
+    "empty": { "visibleText": ["No items"] },
+    "translated": { "visibleText": ["Zeige 21–25 von 25"] }
+  },
+  "policy": { "orderMatters": false }
+}

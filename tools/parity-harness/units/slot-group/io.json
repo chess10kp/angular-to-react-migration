@@ -1,0 +1,6 @@
+{
+  "unitId": "SlotGroupComponent",
+  "inputs": ["name", "direction", "slotGroupClasses", "gap"],
+  "outputs": ["slotGroupResized"],
+  "state": []
+}

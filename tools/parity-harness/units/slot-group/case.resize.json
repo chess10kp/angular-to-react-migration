@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "unitId": "SlotGroupComponent",
+  "caseId": "resize",
+  "title": "Renders three named slots, applies class/style inputs, and emits a debounced resize event",
+  "env": { "viewport": "1280x800", "seed": 1 },
+  "initialInputs": { "name": "header", "direction": "column", "slotGroupClasses": "custom-x", "gap": "8px" },
+  "steps": [
+    { "action": "waitForSettle" },
+    { "action": "checkpoint", "name": "after-mount" },
+    { "action": "resize", "width": 500, "height": 40 },
+    { "action": "advanceClock", "ms": 150 },
+    { "action": "checkpoint", "name": "after-resize" }
+  ],
+  "expected": {
+    "after-mount": {
+      "visibleText": ["header.start", "header.center", "header.end"],
+      "styles": [{ "selector": "[data-region=\"container\"]", "prop": "gap", "value": "8px" }]
+    },
+    "after-resize": {
+      "events": [
+        { "name": "slotGroupResized", "payloadContains": { "name": "header", "width": 500, "height": 40 } }
+      ]
+    }
+  },
+  "policy": {
+    "channels": ["visibleText", "events", "styles"],
+    "orderMatters": false
+  }
+}
