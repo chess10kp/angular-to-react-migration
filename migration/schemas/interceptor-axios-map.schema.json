@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://onecx.migration/schemas/interceptor-axios-map.schema.json",
+  "title": "HttpClient interceptor → Axios map",
+  "description": "PLAN.md §154. Maps the Angular HttpClient interceptor chain (auth headers, retry, error mapping, cancellation) onto the single shared Axios instance + OpenAPI typescript-axios client.",
+  "type": "object",
+  "required": ["version", "sharedInstance", "interceptors"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "sharedInstance": {
+      "type": "string",
+      "description": "Identifier of the single shared Axios instance all BFF access flows through."
+    },
+    "interceptors": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/interceptor" }
+    }
+  },
+  "definitions": {
+    "interceptor": {
+      "type": "object",
+      "required": ["id", "concern", "order", "appliesTo", "axiosStage", "status"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "description": "Angular interceptor class/provider name." },
+        "concern": {
+          "type": "string",
+          "enum": ["auth-header", "retry", "error-mapping", "cancellation", "other"]
+        },
+        "order": {
+          "type": "integer",
+          "description": "Position in the Angular chain; preserved order matters for correctness."
+        },
+        "appliesTo": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "URL patterns the interceptor acts on ('*' = all)."
+        },
+        "axiosStage": {
+          "type": "string",
+          "enum": ["request", "response", "response-error", "adapter"],
+          "description": "Where the equivalent hangs on the shared Axios instance."
+        },
+        "axiosEquivalent": {
+          "type": "string",
+          "description": "Name/path of the Axios request/response interceptor or adapter implementing this concern."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["unmapped", "mapped", "verified"],
+          "description": "unmapped → mapped (equivalent written) → verified (parity test passes, incl. retry/cancellation/error-shape)."
+        },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

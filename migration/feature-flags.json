@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "flags": [
+    {
+      "key": "newBidListView",
+      "mechanism": "enable-disable",
+      "default": false,
+      "consumers": ["BidListPage"],
+      "owner": "",
+      "parityScenarioId": ""
+    },
+    {
+      "key": "betaPortalViewport",
+      "mechanism": "cohort",
+      "default": false,
+      "cohort": { "userIds": [], "segment": "internal-beta" },
+      "consumers": ["PortalViewport"],
+      "owner": "",
+      "parityScenarioId": ""
+    },
+    {
+      "key": "tenantScopedExport",
+      "mechanism": "tenant-rule",
+      "default": false,
+      "tenantRule": {
+        "onForTenants": ["3f2504e0-4f89-41d3-9a0c-0305e82c3301"],
+        "expression": "tenant.tier == 'enterprise'"
+      },
+      "consumers": ["ExportModal"],
+      "owner": "",
+      "parityScenarioId": ""
+    }
+  ]
+}

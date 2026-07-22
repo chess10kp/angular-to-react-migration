@@ -1,0 +1,74 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://onecx.migration/schemas/feature-flag-inventory.schema.json",
+  "title": "Feature-flag inventory",
+  "description": "PLAN.md §124, §270–276. Every flag with its evaluation mechanism; a single React-side evaluator (hook + provider) must reproduce all three, and parity tests must cover the same on/off decisions Angular makes.",
+  "type": "object",
+  "required": ["version", "flags"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "flags": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/flag" }
+    }
+  },
+  "definitions": {
+    "flag": {
+      "type": "object",
+      "required": ["key", "mechanism", "default", "consumers"],
+      "additionalProperties": false,
+      "properties": {
+        "key": { "type": "string", "description": "Flag identifier as used in the Angular source." },
+        "mechanism": {
+          "type": "string",
+          "enum": ["enable-disable", "cohort", "tenant-rule"],
+          "description": "enable-disable: simple on/off. cohort: per-user membership. tenant-rule: rules keyed on tenant UUID."
+        },
+        "default": { "type": "boolean", "description": "Value when no cohort/rule matches." },
+        "cohort": {
+          "type": "object",
+          "description": "Required when mechanism = 'cohort'.",
+          "additionalProperties": false,
+          "properties": {
+            "userIds": { "type": "array", "items": { "type": "string" } },
+            "segment": { "type": "string", "description": "Named segment/expression that resolves the membership." }
+          }
+        },
+        "tenantRule": {
+          "type": "object",
+          "description": "Required when mechanism = 'tenant-rule'. Rules keyed on tenant UUID.",
+          "additionalProperties": false,
+          "properties": {
+            "onForTenants": {
+              "type": "array",
+              "items": { "type": "string", "format": "uuid" },
+              "description": "Tenant UUIDs for which the flag is on."
+            },
+            "expression": { "type": "string", "description": "Optional rule expression over tenant attributes." }
+          }
+        },
+        "consumers": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Pages/components that read this flag (drives migration-unit dependency edges)."
+        },
+        "owner": { "type": "string" },
+        "parityScenarioId": {
+          "type": "string",
+          "description": "Behavior-oracle scenario that asserts the same on/off decision (track A link)."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "mechanism": { "const": "cohort" } } },
+          "then": { "required": ["cohort"] }
+        },
+        {
+          "if": { "properties": { "mechanism": { "const": "tenant-rule" } } },
+          "then": { "required": ["tenantRule"] }
+        }
+      ]
+    }
+  }
+}

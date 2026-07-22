@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://onecx.migration/schemas/remote-compat-matrix.schema.json",
+  "title": "Remote compatibility matrix",
+  "description": "PLAN.md §158. One row per runtime route/remote captured before choosing the shell-flip design.",
+  "type": "object",
+  "required": ["version", "rows"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "generatedFrom": {
+      "type": "string",
+      "description": "How the rows were produced (static inventory pass, manual, spike)."
+    },
+    "rows": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/remote" }
+    }
+  },
+  "definitions": {
+    "remote": {
+      "type": "object",
+      "required": [
+        "id", "route", "technology", "angularGeneration", "shareScope",
+        "manifestUrl", "exposedModule", "customElementName", "basePath",
+        "requiredTopics", "styleMode", "mountsWithoutAngularRouterDI",
+        "decision", "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "description": "Stable slug for the remote." },
+        "route": { "type": "string", "description": "Runtime route/path pattern this remote serves." },
+        "technology": {
+          "type": "string",
+          "enum": ["angular", "web-component", "react", "other"]
+        },
+        "angularGeneration": {
+          "type": "string",
+          "description": "Angular major (e.g. '17','18','19','21') or 'n/a' for non-Angular remotes.",
+          "pattern": "^(n/a|1[0-9]|2[0-9])$"
+        },
+        "shareScope": { "type": "string", "description": "Module Federation share scope name." },
+        "manifestUrl": { "type": "string", "description": "remoteEntry / manifest URL." },
+        "exposedModule": { "type": "string", "description": "MF exposed module key (e.g. './Module')." },
+        "customElementName": {
+          "type": "string",
+          "description": "Custom-element tag if mounted as a web component; '' if none."
+        },
+        "basePath": { "type": "string", "description": "Deployment base path for the remote." },
+        "requiredTopics": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "OneCX topics the remote must have available to mount."
+        },
+        "styleMode": {
+          "type": "string",
+          "enum": ["isolated", "global", "shadow", "scoped-polyfill"]
+        },
+        "mountsWithoutAngularRouterDI": {
+          "type": "boolean",
+          "description": "True if the remote can mount without the Angular Router / DI container."
+        },
+        "decision": {
+          "type": "string",
+          "enum": ["web-component", "compat-island", "blocks-shell-removal", "native-react"],
+          "description": "Shell-flip resolution. See migration/README.md."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["unknown", "compatible", "breaking"]
+        },
+        "owner": { "type": "string" },
+        "contractTest": {
+          "type": "string",
+          "description": "Path/id of the spike or contract test that proved status; empty while unknown."
+        },
+        "notes": { "type": "string" }
+      }
+    }
+  }
+}

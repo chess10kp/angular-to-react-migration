@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "sharedInstance": "onecxAxios",
+  "interceptors": [
+    {
+      "id": "AuthHeaderInterceptor",
+      "concern": "auth-header",
+      "order": 0,
+      "appliesTo": ["*"],
+      "axiosStage": "request",
+      "axiosEquivalent": "onecxAxios.interceptors.request: attachBearer",
+      "status": "unmapped",
+      "notes": "Bearer from @onecx/react-auth (Keycloak); Axios is already a peer of that package."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "generatedFrom": "seed (manual example row; replace with static-inventory pass output per PLAN §148)",
+  "rows": [
+    {
+      "id": "workspace-management",
+      "route": "/admin/workspace",
+      "technology": "angular",
+      "angularGeneration": "18",
+      "shareScope": "default",
+      "manifestUrl": "https://onecx.example/mfe/workspace/remoteEntry.js",
+      "exposedModule": "./OneCXWorkspaceModule",
+      "customElementName": "ocx-workspace-ce",
+      "basePath": "/mfe/workspace/",
+      "requiredTopics": ["currentWorkspace", "permissions"],
+      "styleMode": "scoped-polyfill",
+      "mountsWithoutAngularRouterDI": false,
+      "decision": "compat-island",
+      "status": "unknown",
+      "owner": "",
+      "contractTest": "",
+      "notes": "Injects Angular Router for internal nav; needs compat island until a WC wrapper is proven."
+    }
+  ]
+}
