@@ -39,11 +39,12 @@ export interface ExprResult {
 export function translateExpr(
   src: string,
   renames?: ReadonlyMap<string, string>,
+  signalReads?: ReadonlySet<string>,
 ): ExprResult {
   const out: ExprResult = { code: '', todos: [] };
   const trimmed = src.trim();
   if (trimmed === '') return out;
-  const code = printBinding(trimmed, out, renames);
+  const code = printBinding(trimmed, out, renames, signalReads);
   // On a parse failure `printBinding` records residue; keep the raw source so
   // downstream emit can still surface it (and flag it a second time if invalid).
   out.code = code ?? trimmed;
@@ -106,11 +107,12 @@ export function mapEventName(name: string): EventMapResult {
 export function translateHandler(
   src: string,
   renames?: ReadonlyMap<string, string>,
+  signalReads?: ReadonlySet<string>,
 ): ExprResult {
   const out: ExprResult = { code: '', todos: [] };
   const trimmed = src.trim();
   if (trimmed === '') return out;
-  const code = printAction(trimmed, out, 'e', renames);
+  const code = printAction(trimmed, out, 'e', renames, signalReads);
   // Fall back to the raw source (with a literal `$event` rename) if unparseable.
   out.code = code ?? trimmed.replace(/\$event\b/g, 'e');
   return out;

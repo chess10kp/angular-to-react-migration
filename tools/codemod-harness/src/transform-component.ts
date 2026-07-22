@@ -10,6 +10,7 @@ import prettier from 'prettier';
 import { parseAngularComponent } from './parse/angular-component.js';
 import { transformTemplateToExpr } from './transform.js';
 import { emitComponent, methodRenameMap } from './emit/component.js';
+import { isReactiveForm } from './emit/forms.js';
 import type { Coverage } from './transform.js';
 
 export interface ComponentTransformResult {
@@ -77,7 +78,20 @@ export async function transformComponent(
 
   if (templateHtml !== null) {
     const renames = methodRenameMap(model.methods);
-    const raw = transformTemplateToExpr(templateHtml, model.templateUrl ?? `${tsPath}#inline`, renames);
+    const signalReads = new Set(model.signals.map((s) => s.name));
+    // Reactive-form handles (`fb.group(...)` / `new FormGroup(...)` fields) so the
+    // template layer can lower `[formGroup]`/`formControlName` and `form.get(...)`
+    // reads to react-hook-form (`register`/`handleSubmit`/`watch`/`formState`).
+    const formNames = new Set(
+      model.plainFields.filter((f) => isReactiveForm(f.type, f.init)).map((f) => f.name),
+    );
+    const raw = transformTemplateToExpr(
+      templateHtml,
+      model.templateUrl ?? `${tsPath}#inline`,
+      renames,
+      signalReads,
+      formNames,
+    );
     if (!raw.ok) {
       return {
         ok: false,

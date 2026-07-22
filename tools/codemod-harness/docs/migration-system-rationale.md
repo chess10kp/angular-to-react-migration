@@ -87,11 +87,10 @@ vocabulary**, so every session starts warm instead of reconstructing the terrain
   isn't computed yet (cross-file priority/deps aggregation; span for string-form residue).
 - **[`../.claude/skills/migrate-residue/SKILL.md`](../.claude/skills/migrate-residue/SKILL.md)** —
   the operator skill: every real `MIGRATION_TODO(category)` and its canonical fix, how to
-  read/prioritize/update the ledger, and the resume-across-sessions loop. Honest that no
-  compilable scaffold exists yet, so today's verify = re-run `--report` + re-grep + `npm test` +
-  inspection.
+  read/prioritize/update the ledger, and the resume-across-sessions loop. Verification is
+  `tsc --noEmit` on the `--scaffold` output (see [`scaffold.md`](./scaffold.md)).
 
-## Status (updated 2026-07-18)
+## Status (updated 2026-07-21)
 
 Item #1 — the **`--ledger` aggregation pass — is now implemented** in
 `jac/codemod.jac` (`build_ledger`/`write_ledger`): a driver-side second pass over the
@@ -130,3 +129,15 @@ driver-side, no worker touch. In practice the reachable edge is `this` → `stat
 residue (needs emitter offsets threaded through the worker — deferred to preserve
 byte-identical output); recipe anti-unification is whole-word token replacement,
 suggestions not auto-applied; scaffold excludes partial `.jsx` template fragments.
+
+### What is still genuinely missing (2026-07-21)
+
+The **type oracle** (`tsc` on scaffolded output) is in place. The **behavioral parity
+oracle** is not — trace replay, semantic diff, settle-point normalization across Angular
+zone digests vs React microtasks, Playwright/MSW scenarios green on both twins (`PLAN.md` §90,
+§163). That gap is what blocks evidence-gated promotion for plausible-but-wrong output (RISKS
+F3/F4); `tsc` cannot see wrong effect ordering or missing teardown.
+
+The full **8-module harness** (`harness-core`, `model-gateway`, standalone `recipe-registry`,
+`operator-control`, …) remains a deliberate non-goal while the operator-agent model holds. See
+[`../../../TODO.md`](../../../TODO.md) for the corrected option space and sequencing.

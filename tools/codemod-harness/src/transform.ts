@@ -87,18 +87,22 @@ export interface RawTemplate {
  *
  * @param renames  optional bare-identifier renames (reserved-word methods) so
  *                 template call sites match the component emitter's rewrite.
+ * @param signalReads  component signal names so a bare `sig()` template read
+ *                 lowers to `sig` (the useState value), not a call.
  */
 export function transformTemplateToExpr(
   source: string,
   fileName = 'template.html',
   renames: ReadonlyMap<string, string> = new Map(),
+  signalReads: ReadonlySet<string> = new Set(),
+  formNames: ReadonlySet<string> = new Set(),
 ): RawTemplate {
-  const parsed = parseAngularTemplate(source, fileName, renames);
+  const parsed = parseAngularTemplate(source, fileName, renames, signalReads, formNames);
   const coverage = coverageOf(parsed.nodes, parsed.todos);
   if (parsed.errors.length) {
     return { ok: false, jsxExpr: '', errors: parsed.errors, imports: [], coverage, usesTranslate: false, helpers: [] };
   }
-  const emitted = emitTemplate(parsed.nodes, renames);
+  const emitted = emitTemplate(parsed.nodes, renames, signalReads);
   if (emitted.todos.length) {
     coverage.todoReasons = [...coverage.todoReasons, ...emitted.todos];
     coverage.todoNodes += emitted.todos.length;

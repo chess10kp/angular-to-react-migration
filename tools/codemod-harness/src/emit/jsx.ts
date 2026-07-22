@@ -38,6 +38,8 @@ interface EmitCtx {
   todos: string[];
   /** Bare identifiers renamed by the component emitter (reserved-word methods). */
   renames: ReadonlyMap<string, string>;
+  /** Component signal names — a bare `sig()` read lowers to `sig`. */
+  signalReads: ReadonlySet<string>;
 }
 
 /**
@@ -271,6 +273,14 @@ function emitElement(node: ElementNode, ctx: EmitCtx): t.JSXElement | t.JSXFragm
     ) {
       continue; // folded into className/style above
     }
+    if (p.kind === 'formcontrol') {
+      // formControlName -> {...form.register('field')}
+      const register = t.memberExpression(t.identifier(p.unit!), t.identifier('register'));
+      attributes.push(
+        t.jsxSpreadAttribute(t.callExpression(register, [expr(p.expr, ctx)])),
+      );
+      continue;
+    }
     if (p.kind === 'property') {
       attributes.push(
         t.jsxAttribute(jsxName(p.name), t.jsxExpressionContainer(expr(p.expr, ctx))),
@@ -296,7 +306,7 @@ function emitElement(node: ElementNode, ctx: EmitCtx): t.JSXElement | t.JSXFragm
       );
       continue;
     }
-    const { code } = translateHandler(ev.handler, ctx.renames);
+    const { code } = translateHandler(ev.handler, ctx.renames, ctx.signalReads);
     const usesEvent = /\be\b/.test(code);
     const arrow = t.arrowFunctionExpression(
       usesEvent ? [t.identifier('e')] : [],
@@ -400,8 +410,9 @@ import * as eventHelpers from '../expr.js';
 export function emitTemplate(
   nodes: IRNode[],
   renames: ReadonlyMap<string, string> = new Map(),
+  signalReads: ReadonlySet<string> = new Set(),
 ): EmitResult {
-  const ctx: EmitCtx = { imports: new Set(), todos: [], renames };
+  const ctx: EmitCtx = { imports: new Set(), todos: [], renames, signalReads };
   const rootExpr = childrenToExpression(nodes, ctx);
   const wrapped = t.parenthesizedExpression(rootExpr);
   const { code } = generate(wrapped, { jsescOption: { minimal: true }, retainLines: false });

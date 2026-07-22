@@ -1,7 +1,9 @@
 # codemod-harness
 
-Reusable Angular 17 → React codemod harness. See `../../PLAN.md` (§ "Implement
-the codemod harness before bulk conversion" and the Priority 0 catalog).
+Reusable Angular 17 → React codemod harness. **Slices 1–9 are implemented** (templates through
+`this.` rewiring); see [Still out of scope](#still-out-of-scope) for the next catalog rows.
+Jac driver: `--scaffold` (type oracle), `--ledger`, `--recipes`/`--learn`. Grounded status:
+[`../../TODO.md`](../../TODO.md). Plan context: `../../PLAN.md`.
 
 ## Slice 1 — template control-flow → JSX
 

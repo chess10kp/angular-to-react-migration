@@ -11,6 +11,7 @@
  */
 
 import type { ComponentModel, LifecycleHook, ThisRef } from '../ir/component.js';
+import { isReactiveForm, parseFormGroup, rewriteFormMethodReads, type FormModel } from './forms.js';
 
 export interface ComponentEmit {
   code: string;
@@ -128,17 +129,27 @@ export function emitComponent(model: ComponentModel, opts: EmitComponentOptions)
       if (f.init) lines.push(...emitWasInit(f.name, f.init));
       continue;
     }
-    if (/\b(FormGroup|FormControl|FormArray)\b/.test(f.type ?? '') || /\b(FormBuilder|FormGroup|FormControl|FormArray)\b/.test(f.init ?? '')) {
-      todos.push(`forms: field \`${f.name}\`${f.type ? `: ${f.type}` : ''} is a reactive form — port to react-hook-form (useForm) or controlled state`);
-      lines.push(
-        `  // MIGRATION_TODO(forms): \`${f.name}\`${f.type ? `: ${f.type}` : ''} is an Angular reactive form — port to react-hook-form (useForm/register) or controlled component state; \`.get('x')\` -> the form's field/value.`,
-      );
-      if (f.init) lines.push(...emitWasInit(f.name, f.init));
+    if (isReactiveForm(f.type, f.init)) {
+      const form = f.init ? parseFormGroup(f.init) : null;
+      if (form) {
+        rewriteState.usesReactHookForm = true;
+        emitReactiveForm(f.name, form, lines, todos);
+      } else {
+        // A form whose initializer we can't read (e.g. a form-service factory).
+        todos.push(`forms: field \`${f.name}\`${f.type ? `: ${f.type}` : ''} is a reactive form — port to react-hook-form (useForm) or controlled state`);
+        lines.push(
+          `  // MIGRATION_TODO(forms): \`${f.name}\`${f.type ? `: ${f.type}` : ''} is an Angular reactive form — port to react-hook-form (useForm/register) or controlled component state; \`.get('x')\` -> the form's field/value.`,
+        );
+        if (f.init) lines.push(...emitWasInit(f.name, f.init));
+      }
       continue;
     }
     if (f.init) lines.push(`  const ${f.name} = ${f.init};`);
     else lines.push(`  // MIGRATION_TODO(field): \`${f.name}\`${f.type ? `: ${f.type}` : ''} had no initializer`);
   }
+
+  // --- @HostBinding -> value const + a note to bind it on the root JSX element ---
+  emitHostBindings(model, lines, todos);
 
   // --- Methods -> inner functions (this. rewired to props/state/hooks) ---
   for (const m of model.methods) {
@@ -167,6 +178,9 @@ export function emitComponent(model: ComponentModel, opts: EmitComponentOptions)
     lines.push(`  }`);
   }
 
+  // --- @HostListener -> global-target useEffect, or host-element residue ---
+  emitHostListeners(model, lines, reactImports, todos, rewriteThis);
+
   // --- Lifecycle -> useEffect (structure deterministic; this. rewired in body) ---
   emitLifecycle(model, lines, reactImports, todos, rewriteThis);
 
@@ -182,6 +196,9 @@ export function emitComponent(model: ComponentModel, opts: EmitComponentOptions)
   }
   if (reactImports.size > 0) {
     header.push(`import { ${[...reactImports].sort().join(', ')} } from 'react';`);
+  }
+  if (rewriteState.usesReactHookForm) {
+    header.push(`import { useForm } from 'react-hook-form';`);
   }
   if (usesTranslate) {
     header.push(`import { useTranslation } from 'react-i18next';`);
@@ -218,12 +235,16 @@ interface RewriteResult {
   updates: string[];
   /** HTTP verb methods rewritten `this.http.get(…)` -> `axios.get(…)`. */
   httpVerbs: string[];
+  /** Reactive-form members left unmapped (`.controls`, `.valueChanges`, bare `.get`). */
+  formResidue: string[];
 }
 
 /** Mutable side-effects accumulated across every `this.`-rewrite in a module. */
 interface RewriteState {
   /** True once any `this.http.<verb>()` was lowered to `axios.<verb>()`. */
   usesAxios: boolean;
+  /** True once a reactive form was lowered to `useForm(...)`. */
+  usesReactHookForm: boolean;
 }
 
 /** Axios HTTP verbs a `HttpClient` prop call maps onto 1:1. */
@@ -255,7 +276,15 @@ function buildThisRewriter(
   const setter = (n: string) => 'set' + cap(n);
   const handler = (n: string) => 'on' + cap(n);
 
-  const state: RewriteState = { usesAxios: false };
+  const state: RewriteState = { usesAxios: false, usesReactHookForm: false };
+  // Reactive-form props whose initializer we can lower to a real `useForm(...)`
+  // handle — only these get their method-body reads rewritten to RHF idioms.
+  // (A form we couldn't parse becomes residue, so there's no handle to read.)
+  const formProps = new Set(
+    model.plainFields
+      .filter((f) => isReactiveForm(f.type, f.init) && f.init != null && parseFormGroup(f.init) != null)
+      .map((f) => f.name),
+  );
   const signals = new Set(model.signals.map((s) => s.name));
   const outputs = new Set(model.outputs.map((o) => o.name));
   // HttpClient props are rewritten to axios calls (not left flagged like the
@@ -325,7 +354,16 @@ function buildThisRewriter(
     ops.sort((a, b) => b.start - a.start);
     let code = body;
     for (const op of ops) code = code.slice(0, op.start) + op.text + code.slice(op.end);
-    return { code, remaining: [...remaining], updates: [...new Set(updates)], httpVerbs };
+
+    // With `this.` heads stripped, lower imperative reactive-form ops on any
+    // parseable form handle to react-hook-form idioms (mirrors the template layer).
+    let formResidue: string[] = [];
+    if (formProps.size) {
+      const fr = rewriteFormMethodReads(code, formProps);
+      code = fr.code;
+      formResidue = fr.residue;
+    }
+    return { code, remaining: [...remaining], updates: [...new Set(updates)], httpVerbs, formResidue };
   };
   return { rewrite, state };
 }
@@ -347,6 +385,11 @@ function thisResidueNote(r: RewriteResult): string {
     const verbs = [...new Set(r.httpVerbs)].map((v) => `axios.${v}`).join(', ');
     parts.push(
       `HttpClient -> ${verbs}: Angular returned an Observable, axios returns a Promise whose payload is \`res.data\` — \`await …\` + \`.data\` (or \`.then(r => r.data)\`)`,
+    );
+  }
+  if (r.formResidue.length) {
+    parts.push(
+      `reactive-form ${r.formResidue.map((n) => `\`${n}\``).join(', ')} has no direct react-hook-form equivalent — port by hand (piped \`.valueChanges\` -> \`watch(cb)\` inside a \`useEffect\`, \`.statusChanges\` -> \`formState\`, \`.controls\`/\`.get()\` -> \`register\`/\`getValues\`)`,
     );
   }
   return parts.join('; ');
@@ -450,6 +493,112 @@ function emitInjected(
 }
 
 /**
+ * `@HostListener` -> React. Angular's host listeners bind to the element that
+ * hosts the component. React function components have no host element, so the
+ * two cases split cleanly:
+ *
+ *  - Global targets (`window:`/`document:`/`body:`) DO have a stable React home:
+ *    a mount `useEffect` that `addEventListener`s and tears down on unmount. This
+ *    is fully mechanical and correct — we emit real, compilable code.
+ *  - Host-element events (`@HostListener('click')`) have no host element to bind
+ *    to. We emit the handler as a named `const` and flag it: the reviewer wires
+ *    it onto the component's root JSX element (`onClick={onClick}`).
+ *
+ * The handler body is `this.`-rewired either way.
+ */
+function emitHostListeners(
+  model: ComponentModel,
+  lines: string[],
+  reactImports: Set<string>,
+  todos: string[],
+  rewriteThis: (body: string, refs: ThisRef[]) => RewriteResult,
+): void {
+  for (const hl of model.hostListeners) {
+    const r = rewriteThis(hl.body, hl.thisRefs);
+    const note = thisResidueNote(r);
+    const bodyOut = (pad: string) => r.code.split('\n').map((l) => (l ? pad + l : l));
+
+    if (hl.target === 'host') {
+      // No host element in React — surface the handler, point at the root element.
+      const propHint = hostEventProp(hl.event);
+      todos.push(
+        `host: @HostListener('${hl.event}') \`${hl.name}\` -> attach \`${propHint}={${hl.name}}\` to the component's root JSX element (React has no host element)`,
+      );
+      lines.push(
+        `  // MIGRATION_TODO(host): was @HostListener('${hl.event}') — no host element in React; bind \`${propHint}={${hl.name}}\` on the root JSX element.${note ? ` (${note})` : ''}`,
+      );
+      lines.push(`  const ${hl.name} = (${hl.params}) => {`);
+      for (const l of bodyOut('    ')) lines.push(l);
+      lines.push(`  };`);
+      continue;
+    }
+
+    // Global target -> a real mount effect with matching teardown.
+    reactImports.add('useEffect');
+    if (note) todos.push(`host: @HostListener('${hl.target}:${hl.event}') \`${hl.name}\`: ${note}`);
+    lines.push(
+      `  useEffect(() => { // was @HostListener('${hl.target}:${hl.event}')${note ? ` — ${note}` : ''}`,
+    );
+    lines.push(`    const ${hl.name} = (${hl.params}) => {`);
+    for (const l of bodyOut('      ')) lines.push(l);
+    lines.push(`    };`);
+    lines.push(`    ${hl.target}.addEventListener('${hl.event}', ${hl.name} as EventListener);`);
+    lines.push(`    return () => ${hl.target}.removeEventListener('${hl.event}', ${hl.name} as EventListener);`);
+    lines.push(`  }, []);`);
+  }
+}
+
+/** The React root-element prop an Angular host DOM event maps onto (`click` -> `onClick`). */
+function hostEventProp(event: string): string {
+  // Angular pseudo-events like `keydown.enter` carry a key filter React can't
+  // express in the prop name — keep the base event, the filter is in the note.
+  const base = event.split('.')[0];
+  return 'on' + base.charAt(0).toUpperCase() + base.slice(1);
+}
+
+/**
+ * `@HostBinding` -> a value const plus a note. Like host listeners, the binding
+ * targets the (absent) host element, so we can't apply it — but we keep the value
+ * available and tell the reviewer exactly how to bind it on the root JSX element,
+ * shaped by the binding kind (`class.` / `attr.` / `style.` / a bare prop).
+ */
+function emitHostBindings(model: ComponentModel, lines: string[], todos: string[]): void {
+  for (const hb of model.hostBindings) {
+    const hint = hostBindingHint(hb.binding, hb.propName);
+    todos.push(`host: @HostBinding('${hb.binding}') \`${hb.propName}\` -> bind ${hint} on the component's root JSX element`);
+    lines.push(
+      `  // MIGRATION_TODO(host): was @HostBinding('${hb.binding}') — no host element in React; bind ${hint} on the root JSX element.`,
+    );
+    if (hb.init != null) lines.push(`  const ${hb.propName} = ${hb.init};`);
+    else lines.push(`  // (\`${hb.propName}\` had no initializer — supply its value.)`);
+  }
+}
+
+/** How to express a host binding on the React root element, by binding kind. */
+function hostBindingHint(binding: string, prop: string): string {
+  if (binding.startsWith('class.')) {
+    const cls = binding.slice('class.'.length);
+    return `\`className={clsx({ '${cls}': ${prop} })}\``;
+  }
+  if (binding.startsWith('style.')) {
+    // `style.width.px` -> width, with the unit folded into the value by the human.
+    const styleProp = binding.slice('style.'.length).split('.')[0];
+    return `\`style={{ ${camelStyle(styleProp)}: ${prop} }}\``;
+  }
+  if (binding.startsWith('attr.')) {
+    const attr = binding.slice('attr.'.length);
+    return `\`${attr}={${prop}}\``;
+  }
+  // Bare property/attribute (`disabled`, `id`, `tabindex`…).
+  return `\`${binding}={${prop}}\``;
+}
+
+/** `background-color` -> `backgroundColor` for a React inline-style key. */
+function camelStyle(name: string): string {
+  return name.replace(/-([a-z])/g, (_m, c: string) => c.toUpperCase());
+}
+
+/**
  * Angular lifecycle hooks -> React `useEffect`. The *shape* is deterministic
  * and idiomatic; the *body* is preserved verbatim and flagged for review
  * (it may still hold `this.` refs or `.subscribe()` teardown to rewire). We
@@ -496,6 +645,7 @@ function emitLifecycle(
       remaining: [...new Set(sink.flatMap((r) => r.remaining))],
       updates: [...new Set(sink.flatMap((r) => r.updates))],
       httpVerbs: [...new Set(sink.flatMap((r) => r.httpVerbs))],
+      formResidue: [...new Set(sink.flatMap((r) => r.formResidue))],
     });
 
   const onInit = take('ngOnInit');
@@ -573,10 +723,12 @@ function emitLifecycle(
 }
 
 /**
- * `@ViewChild`/`@ViewChildren` -> `useRef` stubs. The structure is emitted
- * (a ref per decorated property, `useRef` imported) but the wiring is flagged:
- * you must attach `ref={<name>Ref}` in the template, and `@ViewChildren` needs
- * an array of refs / callback-ref pattern rather than a single element ref.
+ * `@ViewChild`/`@ViewChildren` and the signal-query functions
+ * (`viewChild()` / `viewChild.required()` / `viewChildren()`, plus `contentChild*`)
+ * -> `useRef` stubs. The structure is emitted (a ref per query, `useRef` imported)
+ * but the wiring is flagged: attach `ref={<name>Ref}` in the template; `*Children`
+ * needs an array of refs / callback-ref pattern; signal-query reads (`ref()`) map
+ * to `ref.current`; and content queries target projected children.
  */
 function emitViewChildren(
   model: ComponentModel,
@@ -587,18 +739,74 @@ function emitViewChildren(
   for (const vc of model.viewChildren) {
     reactImports.add('useRef');
     const refName = `${vc.propName}Ref`;
+    // How the source declared this: decorator vs signal-query function.
+    const listFn = vc.isContent ? 'contentChildren' : 'viewChildren';
+    const singleFn = vc.isContent ? 'contentChild' : 'viewChild';
+    const origin = vc.signalQuery
+      ? `${vc.isList ? listFn : singleFn}${vc.required ? '.required' : ''}(${vc.selector})`
+      : `@${vc.isList ? 'ViewChildren' : 'ViewChild'}(${vc.selector})`;
+    // Signal queries are read as a call (`this.ref()`); decorators as a plain field.
+    const readNote = vc.signalQuery
+      ? ` The signal read \`${vc.propName}()\` maps to \`${refName}.current\`.`
+      : '';
+    const contentNote = vc.isContent
+      ? ' Content queries target projected children — attach the ref where you render `children`, not in this component\'s own markup.'
+      : '';
     if (vc.isList) {
-      todos.push(`viewchild: @ViewChildren(${vc.selector}) \`${vc.propName}\` -> an array of refs / callback-ref pattern (attach in the template)`);
+      todos.push(`viewchild: ${origin} \`${vc.propName}\` -> an array of refs / callback-ref pattern (attach in the template)`);
       lines.push(
-        `  const ${refName} = useRef<HTMLElement[]>([]); // MIGRATION_TODO(viewchild): was @ViewChildren(${vc.selector}); no single-ref equivalent — collect refs via a callback ref per item (or map children), then attach in the template.`,
+        `  const ${refName} = useRef<HTMLElement[]>([]); // MIGRATION_TODO(viewchild): was ${origin}; no single-ref equivalent — collect refs via a callback ref per item (or map children), then attach in the template.${readNote}${contentNote}`,
       );
     } else {
       const typeArg = vc.type ? `<${vc.type}>` : '<HTMLElement>';
-      todos.push(`viewchild: @ViewChild(${vc.selector}) \`${vc.propName}\` -> useRef; attach \`ref={${refName}}\` in the template and read \`${refName}.current\``);
+      todos.push(`viewchild: ${origin} \`${vc.propName}\` -> useRef; attach \`ref={${refName}}\` in the template and read \`${refName}.current\``);
       lines.push(
-        `  const ${refName} = useRef${typeArg}(null); // MIGRATION_TODO(viewchild): was @ViewChild(${vc.selector}); attach \`ref={${refName}}\` in the template and read \`${refName}.current\` (Angular's \`.nativeElement\` -> \`.current\`).`,
+        `  const ${refName} = useRef${typeArg}(null); // MIGRATION_TODO(viewchild): was ${origin}; attach \`ref={${refName}}\` in the template and read \`${refName}.current\` (Angular's \`.nativeElement\` -> \`.current\`).${readNote}${contentNote}`,
       );
     }
+  }
+}
+
+/**
+ * Emit an Angular reactive form as a react-hook-form `useForm(...)` call.
+ * The form field keeps its name (`const editForm = useForm(...)`) so `this.editForm`
+ * references and template `[formGroup]` bindings resolve to the same handle. Angular
+ * per-control validators become residue because RHF wants a schema resolver.
+ */
+function emitReactiveForm(name: string, form: FormModel, lines: string[], todos: string[]): void {
+  const typeMembers = form.controls
+    .map((c) => `${c.name}: ${c.tsType}`)
+    .join('; ');
+  const typeArg = form.controls.length ? `<{ ${typeMembers} }>` : '';
+  lines.push(`  const ${name} = useForm${typeArg}({`);
+  lines.push(`    defaultValues: {`);
+  for (const c of form.controls) {
+    const suffix = c.nested
+      ? ' // MIGRATION_TODO(forms): nested FormGroup/FormArray — port as a nested field or useFieldArray'
+      : '';
+    lines.push(`      ${c.name}: ${c.nested ? 'undefined' : c.defaultValue},${suffix}`);
+  }
+  lines.push(`    },`);
+  lines.push(`  });`);
+  lines.push(
+    `  // MIGRATION_TODO(forms): \`${name}\` was an Angular reactive form. Template bindings` +
+      ` ([formGroup]/(ngSubmit)/formControlName, \`.get()\`/\`.value\`/\`.invalid\` reads) and method-body` +
+      ` ops (\`.value\`->\`getValues()\`, \`.patchValue/.setValue(v)\`->\`reset(v)\`, \`.get('x')?.setValue(v)\`->` +
+      ` \`setValue('x', v)\`, \`.markAllAsTouched()\`->\`trigger()\`) are lowered. Verify the` +
+      ` \`patchValue\`->\`reset\` sites: RHF \`reset\` replaces all fields and clears dirty/touched state,` +
+      ` whereas Angular \`patchValue\` was a partial merge that preserved it.`,
+  );
+
+  const withValidators = form.controls.filter((c) => c.validators.length > 0);
+  if (withValidators.length || form.groupValidators.length) {
+    const parts = withValidators.map((c) => `${c.name}: [${c.validators.join(', ')}]`);
+    if (form.groupValidators.length) parts.push(`(group): [${form.groupValidators.join(', ')}]`);
+    lines.push(
+      `  // MIGRATION_TODO(forms-validators): port Angular validators to a resolver (zod/yup + \`useForm({ resolver })\`) — ${parts.join('; ')}`,
+    );
+    todos.push(`forms: field \`${name}\` -> useForm(); validators need a resolver (${parts.join('; ')})`);
+  } else {
+    todos.push(`forms: field \`${name}\` -> react-hook-form useForm() with extracted defaultValues`);
   }
 }
 

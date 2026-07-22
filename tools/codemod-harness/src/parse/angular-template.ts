@@ -41,6 +41,8 @@ export function parseAngularTemplate(
   source: string,
   fileName = 'template.html',
   renames: ReadonlyMap<string, string> = new Map(),
+  signalReads: ReadonlySet<string> = new Set(),
+  formNames: ReadonlySet<string> = new Set(),
 ): ParseResult {
   const parsed = parseTemplate(source, fileName, {
     preserveWhitespaces: false,
@@ -53,6 +55,9 @@ export function parseAngularTemplate(
     refMap: new Map(),
     consumedRefs: new Set(),
     renames,
+    signalReads,
+    formNames,
+    currentForm: null,
   };
   // Pre-pass: template reference variables (`<ng-template #x>`) have
   // component-wide scope and may be referenced (via *ngIf else/then) from a
@@ -79,6 +84,12 @@ interface Ctx {
   consumedRefs: Set<string>;
   /** Bare identifiers renamed by the component emitter (reserved-word methods). */
   renames: ReadonlyMap<string, string>;
+  /** Component signal names — a bare `sig()` read lowers to `sig`. */
+  signalReads: ReadonlySet<string>;
+  /** Reactive-form handle names — drives `form.get(...)`/`.value`/`.invalid` rewrites. */
+  formNames: ReadonlySet<string>;
+  /** The nearest enclosing `[formGroup]` handle (for `formControlName` register). */
+  currentForm: string | null;
 }
 
 /**
@@ -110,11 +121,56 @@ function collectRefs(nodes: any[], ctx: Ctx): void {
 
 /** Translate an Angular expression, folding todos/translate/helpers into ctx. */
 function foldExpr(src: string, ctx: Ctx): string {
-  const { code, todos, usesTranslate, helpers } = translateExpr(src, ctx.renames);
+  const { code, todos, usesTranslate, helpers } = translateExpr(src, ctx.renames, ctx.signalReads);
   ctx.todos.push(...todos);
   if (usesTranslate) ctx.usesTranslate = true;
   for (const h of helpers ?? []) ctx.helpers.add(h);
-  return code;
+  return ctx.formNames.size ? rewriteFormReads(code, ctx.formNames) : code;
+}
+
+/**
+ * Rewrite Angular reactive-form reads to react-hook-form idioms, for the given
+ * known form handles. Runs on the already-translated JS expression text.
+ *   form.get('f')?.invalid / .errors  -> form.formState.errors.f
+ *   form.get('f')?.valid              -> !form.formState.errors.f
+ *   form.get('f')?.value / .get('f')  -> form.watch('f')
+ *   form.value.f                      -> form.watch('f')
+ *   form.value                        -> form.watch()
+ *   form.invalid / form.valid         -> !form.formState.isValid / form.formState.isValid
+ * The value forms are last so `.value.f` matches before the bare `.value`.
+ */
+function rewriteFormReads(code: string, formNames: ReadonlySet<string>): string {
+  let out = code;
+  for (const f of formNames) {
+    const F = f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // form.get('field') with an optional trailing member access.
+    const getCall = new RegExp(`\\b${F}\\.get\\(\\s*(['"\`])([^'"\`]+)\\1\\s*\\)(\\?\\.|\\.)?(invalid|valid|errors|value|touched|dirty|pristine)?`, 'g');
+    out = out.replace(getCall, (_m, _q, field, _opt, member) => {
+      switch (member) {
+        case 'invalid':
+        case 'errors':
+          return `${f}.formState.errors.${field}`;
+        case 'valid':
+          return `!${f}.formState.errors.${field}`;
+        case 'touched':
+          return `${f}.formState.touchedFields.${field}`;
+        case 'dirty':
+          return `${f}.formState.dirtyFields.${field}`;
+        case 'pristine':
+          return `!${f}.formState.dirtyFields.${field}`;
+        case 'value':
+        default:
+          return `${f}.watch('${field}')`;
+      }
+    });
+    // form.value.field -> form.watch('field'); form.value -> form.watch()
+    out = out.replace(new RegExp(`\\b${F}\\.value\\.([A-Za-z_$][\\w$]*)`, 'g'), `${f}.watch('$1')`);
+    out = out.replace(new RegExp(`\\b${F}\\.value\\b(?!\\()`, 'g'), `${f}.watch()`);
+    // form.invalid / form.valid (whole-form validity)
+    out = out.replace(new RegExp(`\\b${F}\\.invalid\\b`, 'g'), `!${f}.formState.isValid`);
+    out = out.replace(new RegExp(`\\b${F}\\.valid\\b`, 'g'), `${f}.formState.isValid`);
+  }
+  return out;
 }
 
 /** `foo()` -> `foo`; anything else -> null (plain property / expression). */
@@ -421,6 +477,42 @@ function lowerElement(node: any, ctx: Ctx): IRNode {
     props.push({ name: 'dangerouslySetInnerHTML', expr: `{ __html: ${innerHtml.expr} }`, kind: 'property' });
   }
 
+  // --- Reactive forms -> react-hook-form (register/handleSubmit) ---
+  // `[formGroup]="editForm"` marks this element as a form host: drop the binding
+  // and, if it carries `(ngSubmit)="save()"`, wire `onSubmit={editForm.handleSubmit(save)}`.
+  // `formControlName="x"` (static or bound) on a descendant becomes the spread
+  // `{...editForm.register('x')}`, using the nearest enclosing form handle.
+  const formGroupProp = props.find((p) => p.name === 'formGroup');
+  const isFormHost = !!formGroupProp && ctx.formNames.has(formGroupProp.expr.trim());
+  if (isFormHost) {
+    const form = formGroupProp!.expr.trim();
+    const submit = events.find((e: EventBinding) => e.name === 'ngSubmit');
+    if (submit) {
+      const handler = submit.handler.trim();
+      // `save()` -> a bare function reference; anything else -> an arrow wrapper.
+      const bare = handler.match(/^([A-Za-z_$][\w$]*)\s*\(\s*\)$/);
+      const ref = bare ? (ctx.renames.get(bare[1]) ?? bare[1]) : null;
+      const onSubmit = ref
+        ? `${form}.handleSubmit(${ref})`
+        : `${form}.handleSubmit(() => { ${foldExpr(handler, ctx)} })`;
+      props.push({ name: 'onSubmit', expr: onSubmit, kind: 'property' });
+      events.splice(events.indexOf(submit), 1);
+    }
+  }
+  // `formControlName` — static attribute or `[formControlName]` bound input.
+  const staticFc = attrs.find((a: StaticAttr) => a.name === 'formControlName');
+  const boundFc = props.find((p) => p.name === 'formControlName');
+  if (staticFc || boundFc) {
+    if (ctx.currentForm) {
+      const fieldArg = boundFc ? boundFc.expr : jsString(staticFc!.value);
+      props.push({ name: 'formControlName', expr: fieldArg, kind: 'formcontrol', unit: ctx.currentForm });
+    } else {
+      ctx.todos.push(
+        `formControlName \`${staticFc?.value ?? boundFc?.expr}\` has no enclosing [formGroup] form handle — register it against your useForm() by hand`,
+      );
+    }
+  }
+
   // --- jhiTranslate directive -> {t(key, values?)} content (react-i18next) ---
   // Forms: static `jhiTranslate="a.b"`, bound `[jhiTranslate]="expr"`, plus an
   // optional `[translateValues]="{…}"`. The directive replaces the element's
@@ -432,14 +524,19 @@ function lowerElement(node: any, ctx: Ctx): IRNode {
   if (boundKey) translateKey = boundKey.expr;
   else if (staticKey) translateKey = jsString(staticKey.value);
 
-  const DROP_ATTRS = new Set(['jhiTranslate', 'routerLink', 'routerLinkActive', 'fragment']);
+  const DROP_ATTRS = new Set(['jhiTranslate', 'routerLink', 'routerLinkActive', 'fragment', 'formControlName']);
   const cleanAttrs = attrs.filter((a: StaticAttr) => !DROP_ATTRS.has(a.name));
   const DROP_PROPS = new Set([
     'jhiTranslate', 'translateValues', 'ngModel', 'ngSwitch',
     'routerLink', 'routerLinkActiveOptions', 'queryParams', 'fragment', 'innerHTML', 'innerHtml',
     'ngTemplateOutlet', 'ngTemplateOutletContext',
   ]);
-  const cleanProps = props.filter((p) => !DROP_PROPS.has(p.name));
+  // `formGroup` is a directive with no DOM output; `formControlName` (the bound
+  // form) is replaced by the `formcontrol` spread prop above.
+  if (isFormHost) DROP_PROPS.add('formGroup');
+  const cleanProps = props.filter(
+    (p) => !DROP_PROPS.has(p.name) && !(p.name === 'formControlName' && p.kind === 'property'),
+  );
 
   let children: IRNode[];
   if (translateKey !== null) {
@@ -463,7 +560,11 @@ function lowerElement(node: any, ctx: Ctx): IRNode {
     }
     children = [];
   } else {
+    // A form host scopes `formControlName` on its descendants to this handle.
+    const prevForm = ctx.currentForm;
+    if (isFormHost) ctx.currentForm = formGroupProp!.expr.trim();
     children = lowerChildren(node.children, ctx);
+    ctx.currentForm = prevForm;
   }
 
   // Prepend the ngTemplateOutlet marker so it stays visible even on grouping

@@ -10,6 +10,8 @@ import { Project, SyntaxKind, Node } from 'ts-morph';
 import type {
   ComponentModel,
   ComputedField,
+  HostBindingDef,
+  HostListenerDef,
   Injected,
   InputProp,
   LifecycleHook,
@@ -102,12 +104,26 @@ export function parseAngularComponent(
   const plainFields: PlainField[] = [];
   const methods: MethodDef[] = [];
   const lifecycle: LifecycleHook[] = [];
+  const hostListeners: HostListenerDef[] = [];
+  const hostBindings: HostBindingDef[] = [];
 
   for (const prop of cls.getProperties()) {
     const name = prop.getName();
     const init = prop.getInitializer();
     const typeNode = prop.getTypeNode();
     const typeText = typeNode?.getText() ?? null;
+
+    // @HostBinding('target')
+    const hbDec = prop.getDecorator('HostBinding');
+    if (hbDec) {
+      const bindArg = hbDec.getArguments()[0];
+      hostBindings.push({
+        binding: bindArg ? stripQuotes(bindArg.getText()) : name,
+        propName: name,
+        init: init?.getText() ?? null,
+      });
+      continue;
+    }
 
     // @Input()
     if (prop.getDecorator('Input')) {
@@ -151,6 +167,30 @@ export function parseAngularComponent(
       computeds.push({ name, expr: text, blockBody, thisRefs });
       continue;
     }
+    // Signal-query functions: viewChild()/viewChild.required()/viewChildren()
+    // and the contentChild* cousins (Angular 17.2+).
+    const queryMatch = initText.match(
+      /^(viewChild|viewChildren|contentChild|contentChildren)(\.required)?\s*(?:<([^>]*)>)?\s*\((.*)\)\s*$/s,
+    );
+    if (queryMatch) {
+      const [, fn, requiredTok, typeArg, argsText] = queryMatch;
+      const isList = fn === 'viewChildren' || fn === 'contentChildren';
+      const isContent = fn.startsWith('content');
+      // First arg is the selector; a `{ read: X }` option overrides the ref type.
+      const firstArg = argsText.split(',')[0]?.trim() ?? '';
+      const readMatch = argsText.match(/read\s*:\s*([A-Za-z_$][\w$]*)/);
+      const refType = typeArg?.trim() || readMatch?.[1] || typeText;
+      viewChildren.push({
+        propName: name,
+        selector: firstArg,
+        isList,
+        type: refType ?? null,
+        signalQuery: true,
+        required: !!requiredTok,
+        isContent,
+      });
+      continue;
+    }
     // inject(X)
     const injMatch = initText.match(/^inject\s*\(\s*([^)]*?)\s*\)/);
     if (injMatch) {
@@ -186,6 +226,31 @@ export function parseAngularComponent(
     const { text: body, refs } =
       bodyNode && Node.isBlock(bodyNode) ? blockBodyWithRefs(bodyNode) : { text: '', refs: [] };
     const subscribeCount = bodyNode ? countSubscribes(bodyNode) : 0;
+    // @HostListener('event' | 'target:event', [argExprs])
+    const hlDec = method.getDecorator('HostListener');
+    if (hlDec) {
+      const [evtArg, argsArg] = hlDec.getArguments();
+      const spec = evtArg ? stripQuotes(evtArg.getText()) : '';
+      const colon = spec.indexOf(':');
+      const rawTarget = colon >= 0 ? spec.slice(0, colon) : 'host';
+      const event = colon >= 0 ? spec.slice(colon + 1) : spec;
+      const target = (['window', 'document', 'body'].includes(rawTarget) ? rawTarget : 'host') as
+        HostListenerDef['target'];
+      const args =
+        argsArg && Node.isArrayLiteralExpression(argsArg)
+          ? argsArg.getElements().map((e) => stripQuotes(e.getText()))
+          : [];
+      hostListeners.push({
+        event,
+        target,
+        args,
+        name,
+        params: method.getParameters().map((p) => p.getText()).join(', '),
+        body,
+        thisRefs: refs,
+      });
+      continue;
+    }
     if (LIFECYCLE_HOOKS.has(name)) {
       lifecycle.push({ name, body, isAsync: method.isAsync(), thisRefs: refs, subscribeCount });
       continue;
@@ -217,9 +282,18 @@ export function parseAngularComponent(
     plainFields,
     methods,
     lifecycle,
+    hostListeners,
+    hostBindings,
     todos,
   };
   return { model, errors };
+}
+
+/** Strip a single layer of matching quotes from a string-literal source text. */
+function stripQuotes(text: string): string {
+  const t = text.trim();
+  if (t.length >= 2 && /^['"`]/.test(t) && t[0] === t[t.length - 1]) return t.slice(1, -1);
+  return t;
 }
 
 function inputDecoratorRequired(prop: Node): boolean {

@@ -108,6 +108,13 @@ class Printer implements AstVisitor {
      * access on another object (`obj.delete`) is left alone.
      */
     private readonly renames: ReadonlyMap<string, string> = new Map(),
+    /**
+     * Component signals read in the template. A bare `sig()` read (implicit
+     * receiver, 0 args) lowers to the `useState` value `sig` — the call would
+     * invoke a non-function on the React side. Member reads (`obj.sig()`) and
+     * calls-with-args are left alone.
+     */
+    private readonly signalReads: ReadonlySet<string> = new Set(),
   ) {}
 
   /** Entry point: print a whole expression AST to a JS string. */
@@ -184,6 +191,15 @@ class Printer implements AstVisitor {
       const r = ast.receiver as PropertyRead;
       if (r.name === '$any' && isImplicit(r.receiver) && ast.args.length === 1) {
         return { t: this.at(ast.args[0], P.COMMA), p: P.PRIMARY };
+      }
+      // Signal read: bare `sig()` on the component -> `sig` (the useState value).
+      if (
+        isImplicit(r.receiver) &&
+        kind(r.receiver) !== 'ThisReceiver' &&
+        ast.args.length === 0 &&
+        this.signalReads.has(r.name)
+      ) {
+        return { t: this.id(r.name), p: P.PRIMARY };
       }
     }
     return { t: `${this.at(ast.receiver, P.POSTFIX)}(${this.argList(ast.args)})`, p: P.POSTFIX };
@@ -339,9 +355,10 @@ export function printBinding(
   src: string,
   out: ExprResult,
   renames?: ReadonlyMap<string, string>,
+  signalReads?: ReadonlySet<string>,
 ): string | null {
   const parsed = parser.parseBinding(src, 'expr', 0);
-  return finish(parsed, out, null, renames);
+  return finish(parsed, out, null, renames, signalReads);
 }
 
 /** Parse + print an Angular *action* expression (assignments/chains, `$event`). */
@@ -350,9 +367,10 @@ export function printAction(
   out: ExprResult,
   eventVar: string,
   renames?: ReadonlyMap<string, string>,
+  signalReads?: ReadonlySet<string>,
 ): string | null {
   const parsed = parser.parseAction(src, 'action', 0);
-  return finish(parsed, out, eventVar, renames);
+  return finish(parsed, out, eventVar, renames, signalReads);
 }
 
 function finish(
@@ -360,11 +378,12 @@ function finish(
   out: ExprResult,
   eventVar: string | null,
   renames?: ReadonlyMap<string, string>,
+  signalReads?: ReadonlySet<string>,
 ): string | null {
   if (parsed.errors.length) {
     out.todos.push(`could not parse expression \`${parsed.source}\` (${parsed.errors[0].message})`);
     return null;
   }
   if (kind(parsed.ast) === 'EmptyExpr') return '';
-  return new Printer(out, eventVar, renames ?? new Map()).print(parsed.ast);
+  return new Printer(out, eventVar, renames ?? new Map(), signalReads ?? new Set()).print(parsed.ast);
 }

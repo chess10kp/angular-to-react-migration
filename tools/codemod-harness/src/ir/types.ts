@@ -42,8 +42,19 @@ export interface BoundProp {
    * `ngclass`/`ngstyle` are the whole-object `[ngClass]`/`[ngStyle]` directives,
    * merged with any static `class`/`style` and `[class.x]`/`[style.x]` bindings.
    */
-  kind: 'property' | 'attribute' | 'class' | 'style' | 'ngclass' | 'ngstyle' | 'activeclass';
-  /** For class/style bindings, the sub-target (e.g. `on` in `[class.on]`). */
+  kind:
+    | 'property'
+    | 'attribute'
+    | 'class'
+    | 'style'
+    | 'ngclass'
+    | 'ngstyle'
+    | 'activeclass'
+    | 'formcontrol';
+  /**
+   * For class/style bindings, the sub-target (e.g. `on` in `[class.on]`).
+   * For `formcontrol`, the react-hook-form handle to `.register()` against.
+   */
   unit?: string;
 }
 

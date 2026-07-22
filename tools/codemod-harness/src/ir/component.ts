@@ -34,18 +34,30 @@ export interface Injected {
 }
 
 /**
- * A `@ViewChild('ref')` / `@ViewChild(Cmp)` / `@ViewChildren(...)` property.
- * Becomes a `useRef` on the React side (semantics flagged).
+ * A `@ViewChild('ref')` / `@ViewChild(Cmp)` / `@ViewChildren(...)` property, or the
+ * signal-query equivalents `viewChild()` / `viewChild.required()` / `viewChildren()`
+ * (and their `contentChild*` cousins). Becomes a `useRef` on the React side
+ * (semantics flagged).
  */
 export interface ViewChildRef {
   /** Property name it is stored under, e.g. `input`. */
   propName: string;
   /** The selector argument text, e.g. `'myRef'` or `MyComponent`. */
   selector: string;
-  /** True for `@ViewChildren` (a list of refs / callback-ref pattern). */
+  /** True for `@ViewChildren` / `viewChildren()` (a list of refs / callback-ref pattern). */
   isList: boolean;
   /** Declared property type text, if any (drives the useRef type arg). */
   type: string | null;
+  /**
+   * True when this came from a signal-query function (`viewChild()` etc.) rather
+   * than a decorator. Signal queries are read as a call (`this.ref()`); the emit
+   * flags that the `()` read maps to `.current`.
+   */
+  signalQuery?: boolean;
+  /** True for the `.required` signal-query form (`viewChild.required(...)`). */
+  required?: boolean;
+  /** True for content queries (`contentChild*`) rather than view queries. */
+  isContent?: boolean;
 }
 
 /** A `signal<T>(init)` field -> candidate React state. */
@@ -123,6 +135,34 @@ export interface PlainField {
   init: string | null;
 }
 
+/** An `@HostListener('event', [...])`-decorated method. */
+export interface HostListenerDef {
+  /** DOM event name, e.g. `click`, `resize`, `keydown.escape`. */
+  event: string;
+  /** Where the event fires: the component's host element, or a global target. */
+  target: 'host' | 'window' | 'document' | 'body';
+  /** Decorator arg expressions passed to the handler, e.g. `['$event']`. */
+  args: string[];
+  /** Handler method name. */
+  name: string;
+  /** Handler parameter-list source, e.g. `event: KeyboardEvent`. */
+  params: string;
+  /** Raw handler body (statements between the braces). */
+  body: string;
+  /** AST-located `this.` accesses in `body` (for position-based rewiring). */
+  thisRefs: ThisRef[];
+}
+
+/** An `@HostBinding('target')`-decorated property. */
+export interface HostBindingDef {
+  /** Binding key, e.g. `class.active`, `attr.role`, `style.width`, or bare `disabled`. */
+  binding: string;
+  /** Class member supplying the value. */
+  propName: string;
+  /** Initializer source, if any. */
+  init: string | null;
+}
+
 export interface ComponentModel {
   className: string;
   isDefaultExport: boolean;
@@ -141,6 +181,10 @@ export interface ComponentModel {
   plainFields: PlainField[];
   methods: MethodDef[];
   lifecycle: LifecycleHook[];
+  /** `@HostListener`-decorated methods (host-element or global-target events). */
+  hostListeners: HostListenerDef[];
+  /** `@HostBinding`-decorated properties. */
+  hostBindings: HostBindingDef[];
   /** Non-fatal notes gathered while extracting. */
   todos: string[];
 }

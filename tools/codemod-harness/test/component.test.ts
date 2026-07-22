@@ -73,6 +73,12 @@ describe('component -> tsx', () => {
     expect(r.tsx).toMatch(/return \(\) => \{\s*destroy\$\.next\(\);/);
     // The one ref with a real API change (Router) stays honestly flagged.
     expect(r.tsx).toMatch(/MIGRATION_TODO\(this\): unresolved `this\.router`/);
+    // Signal reads in the template lower to the useState value, not a call —
+    // `account()` in the Angular template would invoke a non-function in React.
+    expect(r.tsx).toMatch(/\{account !== null \?/);
+    expect(r.tsx).toMatch(/username: account!\.login/); // member chain read stripped too
+    expect(r.tsx).not.toMatch(/account\(\)\s*!==/); // the pre-fix JSX call is gone
+    expect(r.tsx).not.toMatch(/account\(\)!\.login/);
     expect(r.tsx).toMatchSnapshot();
   });
 

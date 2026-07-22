@@ -94,12 +94,12 @@ export function HomeComponent() {
         </h1>
         <p className="lead">{t('home.subtitle')}</p>
         <div>
-          {account() !== null ? (
+          {account !== null ? (
             <div className="alert alert-success">
-              {account() && (
+              {account && (
                 <span id="home-logged-message">
                   {t('home.logged.message', {
-                    username: account()!.login,
+                    username: account!.login,
                   })}
                 </span>
               )}
