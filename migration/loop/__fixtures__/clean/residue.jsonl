@@ -1,0 +1,1 @@
+{"id":"clean-001","file":"migration/loop/__fixtures__/clean/src/sample.ts","span":{"startLine":2,"endLine":2},"category":"rename","fix_shape":"rename-fix","status":"open","deps":[],"priority":1}

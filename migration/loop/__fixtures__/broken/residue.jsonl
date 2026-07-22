@@ -1,0 +1,1 @@
+{"id":"broken-001","file":"migration/loop/__fixtures__/broken/src/sample.ts","span":{"startLine":6,"endLine":6},"category":"rename","fix_shape":"rename-fix","status":"open","deps":[],"priority":1}
