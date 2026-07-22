@@ -1,0 +1,1 @@
+{"category":"di","fix_shape":"di-hook","before":"  ) {\n    // MIGRATION_TODO(di): DI: 2 inject() ...\n  }","after":"  ) {}","which_oracle":"type","commit":"","evidence":{"counterexample":"4cf1cb71:migration/app/campaign/campaign.service.react.ts:23","units_won":[],"units_regressed":[]},"id":"ec760d41"}

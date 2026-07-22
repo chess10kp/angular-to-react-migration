@@ -19,9 +19,7 @@ export class CampaignService {
   constructor(
     protected http: HttpClient,
     protected applicationConfigService: ApplicationConfigService,
-  ) {
-    // MIGRATION_TODO(di): DI: 2 inject() dependency(ies) -> constructor params (http: HttpClient, applicationConfigService: ApplicationConfigService); wire at construction or via a provider/context
-  }
+  ) {}
 
   create(campaign: NewCampaign): Observable<EntityResponseType> {
     return this.http.post<ICampaign>(this.resourceUrl, campaign, { observe: 'response' });
