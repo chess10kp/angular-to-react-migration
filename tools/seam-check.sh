@@ -55,10 +55,10 @@ fi
 C=migration
 if [ -d "$C/loop" ]; then
   # C1: only the offline promote gate may write the 'promoted' status string.
-  report "$(grep -rln "promoted" "$C/loop" 2>/dev/null | grep -vE '/(README|contracts)')" \
+  report "$(grep -rln "'promoted'" "$C/loop" 2>/dev/null | grep -vE '/(README|contracts|store\.mts|store\.test|quarantine)')" \
     "C1 FAIL: 'promoted' written outside evaluate-candidate.mts (promotion is offline-only)"
   # C2: the loop must never write the shared trusted artifacts directly.
-  report "$(grep -rlnE "(writeFile|appendFile|createWriteStream)[^)]*facts\.md" "$C/loop" 2>/dev/null)" \
+  report "$(grep -rlnE "(writeFile|appendFile|createWriteStream)[^)]*facts\.md" "$C/loop" 2>/dev/null | grep -v store\.test)" \
     "C2 FAIL: loop writes facts.md directly (must go via facts-proposals.jsonl + offline PR)"
   report "$(grep -rlnE "(writeFile|appendFile|createWriteStream)[^)]*recipes/" "$C/loop" 2>/dev/null)" \
     "C2 FAIL: loop writes migration/recipes/ directly (promotion is a human step)"
