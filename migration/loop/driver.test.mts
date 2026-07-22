@@ -19,12 +19,32 @@ import {
   filterApplierTouches,
 } from './committer.mts';
 import { DefaultRetryPolicy } from './retry.mts';
-import { StoreStub } from './store-stub.mts';
+import { JsonlContextStore } from './store.mts';
 import { FixApplierV1 } from './fix-applier.mts';
 
 function writeJsonl(path: string, rows: unknown[]): void {
   mkdirSync(join(path, '..'), { recursive: true });
   writeFileSync(path, rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
+}
+
+function seedLessonForShape(
+  store: JsonlContextStore,
+  category: string,
+  fixShape: string,
+): void {
+  store.appendLesson({
+    category,
+    fix_shape: fixShape,
+    before: 'seed',
+    after: `seed-${category}-${fixShape}`,
+    which_oracle: 'type',
+    commit: '',
+    evidence: {
+      counterexample: `seed:${category}:${fixShape}`,
+      units_won: [],
+      units_regressed: [],
+    },
+  });
 }
 
 function initTempRepo(): string {
@@ -151,9 +171,12 @@ describe('runDriver', () => {
       },
     ]);
 
+    const store = new JsonlContextStore({ repoRoot: repo });
+    seedLessonForShape(store, 'di', 'di-hook');
+
     const deps: DriverDeps = {
       picker: new JsonlPicker({ residuePath, statusPath }),
-      store: new StoreStub({ lessonsPath }),
+      store,
       applier: new FixApplierV1((_item, _ctx) => {
         const factsRel = ['migration', 'facts.md'].join('/');
         writeFileSync(join(repo, factsRel), 'poison\n');
@@ -191,9 +214,12 @@ describe('runDriver', () => {
       },
     ]);
 
+    const store = new JsonlContextStore({ repoRoot: repo });
+    seedLessonForShape(store, 'di', 'di-hook');
+
     const deps: DriverDeps = {
       picker: new JsonlPicker({ residuePath, statusPath }),
-      store: new StoreStub({ lessonsPath }),
+      store,
       applier: new FixApplierV1((_item, _ctx) => {
         writeFileSync(join(repo, target), 'export const x = 2;\n');
         return { files: [target], before: '1', after: '2' };
@@ -215,13 +241,17 @@ describe('runDriver', () => {
     expect(log).toContain('residue-id: green-1');
     expect(log).toContain('done-state: done:type');
     expect(log).toContain('oracle: type=pass parity=n/a');
-    expect(log).toMatch(/applied-lesson: [0-9a-f]{8}/);
+    expect(log).toMatch(/applied-lesson: ([0-9a-f]{8})/);
+    const lessonId = /applied-lesson: ([0-9a-f]{8})/.exec(log)![1]!;
 
     expect(existsSync(lessonsPath)).toBe(true);
-    const lessonLine = readFileSync(lessonsPath, 'utf8').trim();
-    const lesson = JSON.parse(lessonLine) as { id: string; category: string };
-    expect(lesson.category).toBe('di');
-    expect(log).toContain(`applied-lesson: ${lesson.id}`);
+    const lessons = readFileSync(lessonsPath, 'utf8')
+      .trim()
+      .split('\n')
+      .map((line) => JSON.parse(line) as { id: string; category: string });
+    const lesson = lessons.find((l) => l.id === lessonId);
+    expect(lesson?.category).toBe('di');
+    expect(log).toContain(`applied-lesson: ${lessonId}`);
 
     const treeFiles = execFileSync('git', ['show', '--name-only', '--format=', 'HEAD'], {
       cwd: repo,
