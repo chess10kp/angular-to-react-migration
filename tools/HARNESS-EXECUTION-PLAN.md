@@ -244,7 +244,7 @@ is not yet done). The ratchet (§3.3) reads from the latest row.
 
 | Date | codemod tests | scaffold tsc errors | residue lines | parity tests | parity units accepted |
 |---|---|---|---|---|---|
-| 2026-07-22 | _pending_ | 356 (baseline.json) | 13 | _pending_ | _pending_ |
+| 2026-07-22 | _pending_ | 30 (baseline.json) | 13 | _pending_ | _pending_ |
 | _pending Task 0_ | _run `npm test`_ | _run scaffold_ | _run ledger_ | _run `npm test`_ | _run parity_ |
 
 ---
@@ -1276,7 +1276,7 @@ commit). Statuses: `TODO` / `DOING` / `BLOCKED` / `DONE`.
 | B-U1 | B.6 | Task 0 | TODO | Add a 3rd parity proof unit covering a lifecycle/effect motif (the residue A leaves as stubs). |
 | B-U2 | B.6 | B-U1 | TODO | Add a parity unit covering a state-transition motif (maps to NgRx→RTK parity later). |
 | GATE-4 | gate | B-U1..B-U2 | TODO | Checkpoint. |
-| C-L0 | **build sheet C.8** | Task 0 | TODO | **Committed workspace (BLOCKER — do first).** Convert the jHipster campaign module into in-repo `migration/app/` (committed, not /tmp); patch the codemod ledger writer to emit non-null `span:{startLine,endLine}` from the IR loc; regenerate `residue.jsonl` with repo-relative `.tsx` paths; record `baseline.json` tsc error count. Transcribe C.8/C-L0. |
+| C-L0 | **build sheet C.8** | Task 0 | DONE | **Committed workspace (BLOCKER — do first).** Convert the jHipster campaign module into in-repo `migration/app/` (committed, not /tmp); patch the codemod ledger writer to emit non-null `span:{startLine,endLine}` from the IR loc; regenerate `residue.jsonl` with repo-relative `.tsx` paths; record `baseline.json` tsc error count. Transcribe C.8/C-L0. |
 | C-L1 | C.2 · **build sheet C.8** | C-L0 | DONE | Automate the **type-oracle gate** (impl `Oracle` kind:type): `tsc` reads **stdout**, `-p tsconfig`, normalize `.component.ts↔.tsx` paths, map by `span` line-range, **pass = baseline-diff** (no new errors). Transcribe C.8/C-L1. |
 | C-L2 | C.1 · **build sheet C.8** | C-L1 | DONE | Build the **loop spine + contracts.ts + Picker + Committer + RetryPolicy** (§C.1.5, `tsx`/`.mts`): pick → retrieve → apply → **git-status allowlist firewall** → verify → **append-lesson-then-commit** (one tree). Status in `status.jsonl` sidecar. Transcribe C.8/C-L2. |
 | C-L3 | C.4 · **build sheet C.8** | C-L2 | DONE | Implement **ContextStore**: `lessons.jsonl` (append-only, has `id`, **no status field**); retrieve returns newest ≤3 **unverified** challengers (no champion from proposed); grep `facts.md`∪`facts-proposals.jsonl`; first-instance review gate. Transcribe C.8/C-L3. |

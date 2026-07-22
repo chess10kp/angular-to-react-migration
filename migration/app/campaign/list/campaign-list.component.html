@@ -1,0 +1,22 @@
+<section class="campaign-list" *transloco="let t; scope: 'campaign'">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>{{ t('campaign.title') }}</h1>
+    <a *appHasPermission="'campaign:edit'" class="btn btn-primary" routerLink="/campaign/new">
+      {{ t('campaign.new') }}
+    </a>
+  </div>
+
+  @if (loading | async) {
+    <p class="text-muted">{{ t('campaign.loading') }}</p>
+  } @else {
+    @for (campaign of campaigns | async; track campaign.id) {
+      <button type="button" class="list-group-item list-group-item-action" (click)="select(campaign.id)">
+        <span class="fw-bold">{{ campaign.name }}</span>
+        <span class="badge bg-secondary ms-2">{{ campaign.budget | number }}</span>
+        <span *appFeatureFlag="'campaigns-v2'" class="badge bg-info ms-2">v2</span>
+      </button>
+    } @empty {
+      <p class="text-muted">{{ t('campaign.empty') }}</p>
+    }
+  }
+</section>

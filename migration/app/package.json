@@ -1,0 +1,24 @@
+{
+  "name": "migration-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit --pretty false"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "bootstrap": "^5.3.0",
+    "i18next": "^23.11.0",
+    "react": "^18.3.0",
+    "react-bootstrap": "^2.10.0",
+    "react-dom": "^18.3.0",
+    "react-i18next": "^14.1.0",
+    "react-router-dom": "^6.23.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.4.5"
+  }
+}

@@ -1,0 +1,26 @@
+<form [formGroup]="form" (ngSubmit)="submit()" *transloco="let t; scope: 'campaign'">
+  <div class="mb-3">
+    <label class="form-label" for="name">{{ t('campaign.name') }}</label>
+    <input id="name" type="text" class="form-control" formControlName="name" />
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label" for="slug">{{ t('campaign.slug') }}</label>
+    <input id="slug" type="text" class="form-control" formControlName="slug" [class.is-invalid]="slugInvalid" />
+    @if (slugInvalid) {
+      <div class="invalid-feedback">{{ t('campaign.invalidSlug') }}</div>
+    }
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label" for="budget">{{ t('campaign.budget') }}</label>
+    <input id="budget" type="number" class="form-control" formControlName="budget" />
+  </div>
+
+  <div class="form-check mb-3">
+    <input id="active" type="checkbox" class="form-check-input" formControlName="active" />
+    <label class="form-check-label" for="active">{{ t('campaign.active') }}</label>
+  </div>
+
+  <button type="submit" class="btn btn-primary" [disabled]="form.invalid">{{ t('campaign.save') }}</button>
+</form>
